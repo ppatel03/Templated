@@ -206,8 +206,8 @@ Time to understand scalability, latency aspects
               - if also needed strong isolation, then can help reason for SQL databases due to isolation level support
 
             Tips to ensure consistency with non-database services 
-            - To maintain data consistency between internal services, ensuring exactly-once processing is very important.
-            - To maintain data consistency between the internal service and external service (PSP), we usually rely on idempotency and reconciliation.
+            - To maintain data consistency between internal services, ensuring idempotency + exactly-once processing is very important.
+            - To maintain data consistency between the internal service and external service (PSP), we usually rely on idempotency + exactly once processing and reconciliation.
             - For replicas, acknowledge only if all replicas respond to read/write update.
                   
       a.2. Latency 
