@@ -19,19 +19,38 @@ Framework -
     2.1 Estimate QPS 
       a. Estimate Read vs Write QPS 
 
-  3. Non-Functional Requirements
-    3.1 - Availability vs Consistency based on CAP which simply means Recency or Linearizability/Total ordering (since consistency has different context for ACID, Consistent hashing )
-        - Availability %
-        - Eventual Consistency (most of the times)
-          - Data freshness SLA if eventual consistency
-          - CAN PUT Strong consistency for few APIs like offline alerting, billing info
-    3.2. Latency 
-    3.3. Fault tolerant (DR ready - mirroring) + Durability (No data loss - replication, Use pull) + Resilency (auto-recover : EFS)
-        - Statelessness (CD)
-        - Replication
-    3.4. Secondary stuff : 
-        a.4.1. Accuracy (idempotency, exactly once processing)
-        a.5.1. Security : Auth, VPC, Data encryption if personal data 
+  3. Non-Functional Requirements ( Healthy resilent consistent scalable and secure systems with change safe user operations)
+  Usually cover the topline Healthy is enough to start with 
+    3.1 - Healthy systems 
+      3.1.1. - Availability vs Consistency based on CAP which simply means Recency or Linearizability/Total ordering (since consistency has different context for ACID, Consistent hashing )
+          - Availability %
+          - Eventual Consistency (most of the times)
+            - Data freshness SLA if eventual consistency
+            - CAN PUT Strong consistency for few APIs like offline alerting, billing info
+      3.1.2. Latency 
+    3.2 - Resilent systems ( measured by MTTR, MTTD, Auto-remediation rate)
+      3.2.1. Fault tolerant (DR ready - mirroring, statlessness) 
+      3.2.2  Durability (No data loss - replication, Use pull) 
+      3.2.3. Autoscaling, Auto-heal like in Kubernetes
+    3.3. - Consistency 
+       - Type and freshness SLA if eventual/temporal : covered during availability above 
+       - Data integrity / Accuracy 
+          - Idempotency
+          - Exactly once processing 
+          - Detection using merklee tree 
+          - Resoluion using Reconcilliation process
+    3.4 - Scalability ( measured by CPU throttling, OOM kills, Disk exhaustion, Pod kills) 
+    3.5 - Security : AAA ( Authentication, Authorization and Accounting),  VPC, Data encryption if personal data
+    3.5 - Change safe ( measured change failure rate, rollback rate, lead time to productio, PR throughput)
+      -  Automated reviews with AI, clear documentation with rules for AI editors like cursor 
+      -  Integration/E2E testing before merge 
+      -  Staging and Pre-prod/Canary : Automated change analysis for regression detection 
+      -  Prod : Automated change analysis for regression detection  
+    3.6 - User perceived reliability ( measure by incoming bugs from user, Apdex score) 
+    3.7 - Operations ( measured by # of hours in operations, false positive alerts,  % of auto-remediated alerts )
+      - metrics, monitoring and alerting set up, oncall setup 
+      - auto-remediation 
+      - reduce false positive alerts 
 
   4. Metrics monitoring & Alerting for oncall using datadog
     a. Business success 
