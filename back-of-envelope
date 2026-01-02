@@ -217,7 +217,7 @@ Time to understand scalability, latency aspects
 
       a.3. Fault tolerant + Durability + Resilency
         - Fault tolerance : tolerate faults which means high standards than just availability ( DR ready : mirroring ) 
-        - Durability : no data loss ( replication )
+        - Durability : no data loss ( redundancy with replication )
             - can help reason how much to replicate. 
                 Example, say 99.999999% (six 9's) durability can be achieved assuming failure rate of one server is  0.01% (say 99.99% guarantee for ec2 on aws). This means you need 2 servers atleast which means 1 replica 
                   0.0001 ^ 2    = 0.0000001    or  10 ^ -8
