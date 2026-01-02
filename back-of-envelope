@@ -130,17 +130,6 @@ Time to understand scalability, latency aspects
           For sake of time constraints, do not hesitate to round off large amount
 
 
-  b. Estimate bandwidth for read and write QPS 
-      say 1 KB for 100K QPS ~ 100 MBps
-      - can help reason your latency
-      - can help reason your replication in DBs or multiple servers
-      - can help reason your sharding for database (remember internal data center max bandwidth to 25 Gbps ~ 2.5 GBps ) https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-network-bandwidth.html 
-
-3. Estimate Total Storage bytes (a year, 10 years)
-    a. tell why you are estimating. Just a high level conclusion if you need DB sharding which depends on size and bandwidth. 
-      - a year, 10 years 
-    example, to help decide if sharding is need and master-replica model per DB or per parition. Example more than 64 TB of storage definitely needs sharding (most AWS DBs or even cache like Redis has max 64 - 128 TB of storage https://aws.amazon.com/about-aws/whats-new/2020/09/amazon-aurora-increases-maximum-storage-size-128tb/ )
-
 4. Non-Functional Requirements (https://www.datacore.com/blog/availability-durability-reliability-resilience-fault-tolerance/ )
 
     a. Reliability Standards
@@ -233,10 +222,23 @@ Time to understand scalability, latency aspects
     b. Engagement metrics
     c. Reliability metrics 
 
+
   6. CI/CD Best practices if possible in deployment & scaling 
     a. Stateless services
       - try to add stateless servers if possible
       - stateful server only for few use cases like socket connections. Make sure you know how to deal with scalability for socket connections.
+
+  7. Estimation
+    Estimate bandwidth for read and write QPS 
+      say 1 KB for 100K QPS ~ 100 MBps
+      - can help reason your latency
+      - can help reason your replication in DBs or multiple servers
+      - can help reason your sharding for database (remember internal data center max bandwidth to 25 Gbps ~ 2.5 GBps ) https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-network-bandwidth.html 
+
+    Estimate Total Storage bytes (a year, 10 years)
+      a. tell why you are estimating. Just a high level conclusion if you need DB sharding which depends on size and bandwidth. 
+        - a year, 10 years 
+      example, to help decide if sharding is need and master-replica model per DB or per parition. Example more than 64 TB of storage definitely needs sharding (most AWS DBs or even cache like Redis has max 64 - 128 TB of storage https://aws.amazon.com/about-aws/whats-new/2020/09/amazon-aurora-increases-maximum-storage-size-128tb/ )
 
   7. High level design ( super important and help in broad understanding of the system)
 
