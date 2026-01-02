@@ -21,21 +21,6 @@ Framework -
 
     NOW TELL THAT YOU WILL ESTIMATE AT HIGH LEVEL ONLY 
 
-    2.2 Estimate bandwith quickly
-      b. Estimate bandwidth per user for read and write QPS 
-      c. Estimate bandwidth in total for read and write QPS
-        tell why you are estimating.
-        High total bandwidth means you need distributed system with high availability and replication in DBs to spread out the load
-        Example, High user bandwidth say 100 MB/s means latency could be very high. So split the bandwidth with more replication 
-
-    2.3 Estimate Total Storage bytes
-      tell why you are estimating. 
-        Just a high level conclusion if you need DB sharding which depends on size and bandwidth. 
-
-      TRICK
-      1. B * K/M/G = K/M/G (always same when multiplied with bytes)
-      2. K * K/M/G = M/G/T 
-      2. M * K/M/G = G/T/P 
 
   3. Non-Functional Requirements
     3.1 - Availability vs Consistency based on CAP which simply means Recency or Linearizability/Total ordering (since consistency has different context for ACID, Consistent hashing )
@@ -58,11 +43,29 @@ Framework -
       - Availability 
       - Latency, Accuracy, Error rate 
 
+  5. Estimation 
+    2.1. Estimate bandwith quickly
+      b. Estimate bandwidth per user for read and write QPS 
+      c. Estimate bandwidth in total for read and write QPS
+        tell why you are estimating.
+        High total bandwidth means you need distributed system with high availability and replication in DBs to spread out the load
+        Example, High user bandwidth say 100 MB/s means latency could be very high. So split the bandwidth with more replication 
+
+    2.2. Estimate Total Storage bytes
+      tell why you are estimating. 
+        Just a high level conclusion if you need DB sharding which depends on size and bandwidth. 
+
+      TRICK
+      1. B * K/M/G = K/M/G (always same when multiplied with bytes)
+      2. K * K/M/G = M/G/T 
+      2. M * K/M/G = G/T/P 
+
   From above, Conclude at high level from Back of envelope
    Example, High availability, bandwidth, large storage
         - needs multiple instances 
         - needs sharded storage 
-        - needs replicated storage  
+        - needs replicated storage 
+ 
   
      
 Lets take a look into details : 
