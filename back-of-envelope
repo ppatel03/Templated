@@ -190,7 +190,7 @@ Time to understand scalability, latency aspects
                 - always associated with data freshness sla
               - Eventual consistency which is weakest (default setting in Cassandra)
 
-            90% of the time your ask of high consistency should be simple 
+            90% of the time your ask of strong consistency should be simple 
              -  Quorum consistency or 
              -  you can extend to Recency guarantee - Linearazibility
 
