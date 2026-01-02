@@ -154,12 +154,28 @@ Time to understand scalability, latency aspects
 
           - Consistency 
             - Types of Consistency (https://www.geeksforgeeks.org/sequential-consistency-in-distributive-systems/# )
-              - High consistency (all provides total ordering)
+              - Strong consistency (all provides total ordering)
                 - Linearizability/Atomic consistency (atomic + real-time order) 
                   - Recency guarantee
                   - One popular example is password update of someone’s bank account.
+                  - Linearizability enforces real-time ordering. If an operation completes before another starts, the first must appear before the second in the global order.
                 - Quorum consistency 
-              - Serializability (transactional order)
+              - Serializability (transactional order, no real-time requirement)
+                - Example
+                    Two processes, shared variable x = 0:
+                    
+                      Time →
+                        P1: write(x=1) ──────────────┐
+                                                     │ completes at T2
+                        P2:            write(x=2) ────┼───┐
+                                                      │   │ completes at T3
+                        P3:                          read(x) ────┐
+                                                                  │ completes at T4
+                    Serializable (but not Linearizable)
+                    Valid execution:
+                      - P3 reads x = 1 (even though write(x=2) finished before the read started)
+                      - Equivalent to serial order: write(x=1) → read(x=1) → write(x=2)
+                      - Why valid: The read completes at T4, after both writes. But serializability only requires equivalence to some serial order; it doesn't enforce that the read sees the most recent write.
               - Sequential consistency ( per program order preserved)
                 - DOES NOT ensure writes are visible instantaneously or in the same order as according to some global block.
                 - One example is that of facebook posts of friends (sequential for a particular friend, but not for overall)
@@ -170,6 +186,8 @@ Time to understand scalability, latency aspects
                 - One example is Comment replies.
               - Read-after-write consistency ( session level)
                 - examples like profile update, whether you liked a post or not
+              - Temporal consistency ( Data is valid within a time window)
+                - always associated with data freshness sla
               - Eventual consistency which is weakest (default setting in Cassandra)
 
             90% of the time your ask of high consistency should be simple 
