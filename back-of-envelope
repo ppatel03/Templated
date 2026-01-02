@@ -155,19 +155,20 @@ Time to understand scalability, latency aspects
           - Consistency 
             - Types of Consistency (https://www.geeksforgeeks.org/sequential-consistency-in-distributive-systems/# )
               - High consistency (all provides total ordering)
-                - Serializability (serial order between multiple objects, multi-operations, arbitary time order)
-                - Linearizability/Atomic consistency (single operation, single-object, real-time order) 
+                - Linearizability/Atomic consistency (atomic + real-time order) 
+                  - Recency guarantee
                   - One popular example is password update of someone’s bank account.
                 - Quorum consistency 
-              - Sequential consistency 
+              - Serializability (transactional order)
+              - Sequential consistency ( per program order preserved)
                 - DOES NOT ensure writes are visible instantaneously or in the same order as according to some global block.
                 - One example is that of facebook posts of friends (sequential for a particular friend, but not for overall)
-                - similar to Monotonic read consistency Pg 165 DDIA
-              - Causal consistency (partial ordering and detect parallel events)
+              - Monotonic read consistency Pg 165 DDIA ( no going backwards)
+              - Causal consistency (cause-effect preserved, So its partial ordering and detect parallel events)
                 - Preserves the order of casually-related(dependent) operations.
                 - So, that’s why it does not ensure the ordering of operations that are non-causal.
                 - One example is Comment replies.
-              - Read-after-write consistency 
+              - Read-after-write consistency ( session level)
                 - examples like profile update, whether you liked a post or not
               - Eventual consistency which is weakest (default setting in Cassandra)
 
