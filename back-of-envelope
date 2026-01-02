@@ -196,7 +196,7 @@ Time to understand scalability, latency aspects
 
             - if Consistency over availability, it means high consitency.
             - Eventual Consistency (most of the times)
-              - Data freshness SLA if eventual consistency 
+              - Data freshness SLA if eventual consistency ( which makes temporal) 
                 - With this in mind, it provides as good idea about time to resolve conflicts with concurrent writes  
                     - Example, like counter DB between datacenters. So using CRDT to resolve conflicts
                     - Example, building search engine or yelp. With this you can even decide that, your system could be out of sync from third part servers for 10s in a day
