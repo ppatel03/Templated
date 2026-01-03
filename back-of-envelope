@@ -327,6 +327,27 @@ Time to understand scalability, latency aspects
               - Pros :  one param to tune, no boundary issue 
           - Implementation 
             - distributed counting using redis (single threaded and hence atomic). Race condition can be avoid using Redis sorted set + help of Lua script which executes atomically
+              SLIDING_WINDOW_LUA_SCRIPT = """
+                  local key = KEYS[1]
+                  local limit = tonumber(ARGV[1])
+                  local window = tonumber(ARGV[2])
+                  local now = tonumber(ARGV[3])
+
+                  -- Remove expired entries
+                  redis.call('ZREMRANGEBYSCORE', key, 0, now - window)
+
+                  -- Count current requests
+                  local current = redis.call('ZCARD', key)
+
+                  if current < limit then
+                      -- Add current request
+                      redis.call('ZADD', key, now, now)
+                      redis.call('EXPIRE', key, window)
+                      return 1  -- Allowed
+                  else
+                      return 0  -- Rate limited
+                  end
+            """
           - Rate limiting rules config 
           - Exceeded rate limit HTTP error : 429 too many request 
             - HTTP response headers for additional info when user gets 429 too many requests 
