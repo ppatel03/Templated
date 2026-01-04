@@ -602,14 +602,16 @@ Time to understand scalability, latency aspects
                             m = length of prefix (e.g., "app" = 3)
                             k = number of words matching the prefix
                   - But to fetch top 5 suggestions by frequency, complexity O(m)  + O(k) + O(sort by frequency)
-                    - if we limit prefix length to search say p=50 and cache top 5 search at every node, then complexity will be constant
-                  -  Trie cache will be in memory in form of trie structure 
+                    - if we limit prefix length to search say p=10 and cache top 5 search at every node, then complexity will be constant
+                  -  Trie cache will be in memory in form of trie structure
+                    - overhead will look high for worst case because 26^10 byte =  (2 *10)^ 10 byte = ~ 1024 * 10G = 10 TB
+                    - but in reality, overhead is low since say 1 millions words * max length = 10^7 = 10 MB 
                   - Trie cache is updated daily via logs collected. So data gathering in the back-end (offline) to populate new values in the trie daily
 
                   Client/Browser -> API Server -> Trie Cache -> Trie DB 
                                                                     
                   Analytics Logs -> Data parser -> Trie Builder (workers) -> update periodically to Trie DB
- 
+
               - Performance : Browser cache (header cache-control)
               - Smart sharding based on historical queries for equal load partition
               - Filter unwanted words 
