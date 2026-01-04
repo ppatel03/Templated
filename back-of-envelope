@@ -492,7 +492,7 @@ Time to understand scalability, latency aspects
               - Multiple data centers 
               - Metrics monitoring 
           9. Design A Chat System
-            - Polling (nw bandwidth) vs Long Polling (still makes periodic one-direction connections) vs WebSocket
+            - Polling (nw bandwidth) vs Long Polling (still makes periodic one-direction connections) vs WebSocket ( 2-way communication which starts with TCP handshake + TLS + Websocket upgrade)
             - Data model ? 
               - 1:1 : id, from, to, message, timestamp
               - Group : id, from, message, timestamp, group_id
