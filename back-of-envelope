@@ -478,6 +478,8 @@ Time to understand scalability, latency aspects
                                                                                                 Notification service                     
                                                                          
                 Dataflow with multiple Queues (like Spark, Flink) over Fanout service
+                  - Offline
+                  - Scale different systems independently 
                   - Durable system with help of Queues ( retry if failied )
             - Feed fetch flow
                - Client/Browser -> LB -> feed-fetcher (online path) -> News Feed cache (set of post ids)
@@ -486,7 +488,7 @@ Time to understand scalability, latency aspects
             - Need for caching to achieve us latency 
             - Others 
               - Scaling each component
-              - DB - sharding, Replication and consistency different levels ( read after write consistency for post, per user sequential consitency for news feed)
+              - DB - sharding, Replication and consistency different levels ( quorum or even read after write consistency for post, per user sequential consitency for news feed)
               - Multiple data centers 
               - Metrics monitoring 
           9. Design A Chat System
