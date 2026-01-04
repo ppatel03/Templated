@@ -629,7 +629,7 @@ Time to understand scalability, latency aspects
                 - Why Video transcoding (different resolutions, video formats (HLS, DASH), fps, bit rate)
                 - DAG model for video ( Video, Audio, Metadata. Video has further parallel step -> transcoding different resolutions, thumbnail, watermark)
                 - Performance - CDN, GOP/multipart upload, download chunks during playing rather than whole video, upload service across datacenters, parallelism everywhere
-                - Safety : Presigned URL for authorized users to upload/modify
+                - Safety : Presigned URL for authorized users to upload/modify, also it saves bandwidth by avoiding going through your LB and api server
                 - Video Protection - AES encryption, watermarking 
                 - Others - Live streaming, scaling the database
             12. Design Google Drive
