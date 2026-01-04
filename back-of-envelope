@@ -548,7 +548,59 @@ Time to understand scalability, latency aspects
             - Others - support media files, E2E Encryption, Improve Load time by multi-datacenter, Retry with Queue
           10. Design A Search Autocomplete System
               - High level design (trie)
+                  - option 1 : indexing on mysql 
+                    - for example, get suggestions for "app"
+                    - 
+                                              B-tree Structure (3 levels, simplified):
+
+                                                              ┌─────────────────────────────────┐
+                                                              │     ROOT NODE                   │
+                                                              │  Keys: "appalachian", "banana"  │
+                                                              │  (split points)                 │
+                                                              └──────────────┬──────────────────┘
+                                                                            │
+                                                              ┌──────────────┴──────────────┐
+                                                              │                             │
+                                                  ┌───────────▼──────────┐    ┌────────────▼────────┐
+                                                  │   INTERNAL NODE 1    │    │   INTERNAL NODE 2   │
+                                                  │ Keys: "apple"        │    │ Keys: "banana"      │
+                                                  │ (split point)        │    │ (split point)       │
+                                                  └──────────┬───────────┘    └──────────┬─────────┘
+                                                            │                           │
+                                                  ┌──────────┴──────────┐    ┌──────────┴──────────┐
+                                                  │                      │    │                      │
+                                          ┌───────▼──────┐    ┌─────────▼─────┐    ┌──────────────▼─────┐
+                                          │ LEAF NODE 1  │    │  LEAF NODE 2  │    │   LEAF NODE 3      │
+                                          ├──────────────┤    ├───────────────┤    ├────────────────────┤
+                                          │ apple   →id1│    │ appalachian   │    │ apply       →id4  │
+                                          │ appi    →id2│    │ →id3          │    │ apt         →id5  │
+                                          └──────────────┘    └───────────────┘    │ banana      →id6  │
+                                                                                    │ orange      →id7  │
+                                                                                    └────────────────────┘
+                  
+                      - Query: "app%"
+
+                          [ROOT] ──disk I/O──> [INTERNAL] ──disk I/O──> [LEAF 1]
+                                                                          │
+                                                                          ├─ Compare "apple" (string compare)
+                                                                          ├─ Compare "appi" (string compare)
+                                                                          └─disk I/O──> [LEAF 2]
+                                                                                        │
+                                                                                        ├─ Compare "appalachian"
+                                                                                        └─disk I/O──> [LEAF 3]
+                                                                                                      │
+                                                                                                      ├─ Compare "apply"
+                                                                                                      └─ Compare "apt" (STOP)
+                      - Complexity : O(log n + k*m + disk_io_overhead)
+                          where:
+                            n = total number of words
+                            k = number of words matching the prefix
+                            String comparison per entry: O(m) where m = average word length
                   - Trie Data structure with frequency stored at every node with EOW = true 
+                      Complexity :   O(m + k)
+                          where:
+                            m = length of prefix (e.g., "app" = 3)
+                            k = number of words matching the prefix
                   - But to fetch top 5 suggestions, complexity O(length of search)  + O(# of children * longest length of child) + O(sort)
                     - if we limit prefix length to search and cache top 5 search at every node, then complexity will be constant
                   -  Trie cache will be in memory in form of trie structure since fetching directly from DB with prefix will be slow ( 26 ^ longest word) 
