@@ -601,13 +601,13 @@ Time to understand scalability, latency aspects
                           where:
                             m = length of prefix (e.g., "app" = 3)
                             k = number of words matching the prefix
-                  - But to fetch top 5 suggestions, complexity O(length of search)  + O(# of children * longest length of child) + O(sort)
-                    - if we limit prefix length to search and cache top 5 search at every node, then complexity will be constant
-                  -  Trie cache will be in memory in form of trie structure since fetching directly from DB with prefix will be slow ( 26 ^ longest word) 
+                  - But to fetch top 5 suggestions by frequency, complexity O(m)  + O(k) + O(sort by frequency)
+                    - if we limit prefix length to search say p=50 and cache top 5 search at every node, then complexity will be constant
+                  -  Trie cache will be in memory in form of trie structure 
                   - Trie cache is updated daily via logs collected. So data gathering in the back-end (offline) to populate new values in the trie daily
 
                   Client/Browser -> API Server -> Trie Cache -> Trie DB 
-                                                                    |
+                                                                    
                   Analytics Logs -> Data parser -> Trie Builder (workers) -> update periodically to Trie DB
  
               - Performance : Browser cache (header cache-control)
