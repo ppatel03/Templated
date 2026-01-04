@@ -397,7 +397,7 @@ Time to understand scalability, latency aspects
             - Multi-database set up with increments by K for K DBs (scaling problem, ID synchronization)
             - UUID - UUID is a 128-bit number used to identify information in computer systems. UUID has a very low probability of getting collusion. Quoted from Wikipedia, “after generating 1 billion UUIDs every second for approximately 100 years would the probability of creating a single duplicate reach 50%” [1]. Cons : (128 bits long but our requirements is 64 bits and they not go up with time)
             - Ticket Server like Flickr (SPOF)
-            - Twitter snowflake approach (64 bits = 1 sign + 41 timestamp + 5 datacenter + 5 machine + 12 sequence )
+            - Twitter snowflake approach (64 bits = 5 datacenter + 5 machine + 41 timestamp +  12 sequence + 1 sign  )
               - timestamp in milliseconds is 13 digits 
               - So how many numbers could be generated in 1 milliseconds ? ~10^4 
                 - number generator can just execute in may be 10 - 100 ns consider counter is in L1/L2 cache. So ~10^4 numbers could be easily generated in 1 miliseconds. So 12 bits atleast for sequence number
@@ -425,11 +425,10 @@ Time to understand scalability, latency aspects
             - BFS over DFS
             - URL Frontier 
               - politeness ( avoid too many requests and getting blocked by rate limiter )
-              - priority (pagerank)
-              - Crawl based on Freshness (update history)
+              - priority based on (pagerank) and Freshness (update history)
             - Downloader (Robots)
               - performance : distributed crawl, cache DNS, Locality, short timeout
-            - Robustness : scaling using consistent hashing, save state using Q, exception handling,
+            - Reliability/Robustness : scaling using consistent hashing, save state using Q, exception handling,
             - Extensibility : Rather than just "text", support new content types say images or video 
             - Detect and avoid malciousness
               - redundant content using deduplication with hashing
