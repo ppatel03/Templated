@@ -461,7 +461,7 @@ Time to understand scalability, latency aspects
             - Notification template (cached in our DB so that Consumer can use it)
             - Notification setting (opt in / opt out)
             - Rate limiting ( avoid users with too many notifications)
-            - Retry (PUT IT BACK TO THE QUEUE)
+            - Retry (PUT IT BACK TO THE QUEUE OR DLQ after multiple retries)
             - Security (certificate upload, Appkey/appSecret pair between our notification service and providers)
             - Monitor queued notifications
             - Events tracking (state of notification)
