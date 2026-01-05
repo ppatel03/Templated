@@ -693,6 +693,7 @@ Time to understand scalability, latency aspects
                           - Total memory requirement = 2 million * 832 bytes + 0.67 million * 64 bytes = ~1.71 GB
                         - Pros 
                             - solves popular cities problem of Geohash
+                            - avoids prefix based neighbour searches for not enough business in Geohash 
                         - Cons 
                            - in memory challenge and operational start up time to construct / update quad tree
                             - Estimate of time taken on 3GHz cpu ~ 3 * 10 ^ 9 cpu cycles /s 
@@ -700,8 +701,63 @@ Time to understand scalability, latency aspects
                               - c = 100 ( add/sub/comparison takes 5-10 cycles + avl tree balancing ~40 + L1/L2 cache miss ~40 + branch misprediction ~15 )
                               - so 100 * 2*10^6 * log base 2 (2*10^6) ~ 6 billion cycle ~ 6 s
                       - Google S2 - Google Maps, Tinder
-                  Browser/Client -> LB -> API Service -> Geo hash DB (redis)
-                                                      -> DB (business info)
+                      - High level design 
+                          Browser/Client -> LB -> API Service -> Geo hash DB (redis)
+                                                              -> DB (business info)
+                      - How is user lat and long converted to geohash to search in geohash DB
+                        - simply by binary encoding + recursive division 
+                          - Example , say for lat = 37.9, long = -122.8
+                            - For latitdue 
+                              - Iteration 1: Is 37.422408 in [0, 90]? YES → bit = 1  New range: [0, 90]  
+                              - Iteration 2: Is 37.422408 in [45, 90]? NO → bit = 0  New range: [0, 45]
+                              ..
+                              ..
+                            - For longitude 
+                              - Iteration 1: Is -122.085608 in [-180, 0]? YES → bit = 0 New range: [-180, 0]
+                              - Iteration 2: Is -122.085608 in [-90, 0]? YES → bit = 0 New range: [-90, 0]
+                              ..
+                              ..
+                        - Then interleave these bits 
+                          Interleaved: lng lat lng lat lng lat lng lat ...
+                          Result:       0  1  0  0  0  1  1  1 ...
+                        - Then convert binary to base32 : say 929hvu  
+                      -  How is user lat and long is used to get quadtree leaf to get say 100 nearby businesses
+                        - Example , say for lat = 37.9, long = -122.8
+                          -                     [Root: Entire World]
+                                                  Bounds: (-90 to 90, -180 to 180)
+                                                  Mid: (0°, 0°)
+                                                  User: (37.42, -122.08)
+                                                  Decision: 37.42 > 0 (N), -122.08 < 0 (W) → NW
+                                                        |
+                                                  ┌──────▼──────┐
+                                                  │  NW: 40M    │
+                                                  │ Bounds:     │
+                                                  │ (0-90, -180-0)│
+                                                  │ Mid: (45°, -90°)│
+                                                  │ User: (37.42, -122.08)│
+                                                  │ Decision: 37.42 < 45 (S), -122.08 < -90 (W) → SW
+                                                  └──────┬──────┘
+                                                        |
+                                                  ┌──────▼──────┐
+                                                  │ SW: 500K    │
+                                                  │ Bounds:     │
+                                                  │ (0-45, -180 to -90)│
+                                                  │ Mid: (22.5°, -135°)│
+                                                  │ User: (37.42, -122.08)│
+                                                  │ Decision: 37.42 > 22.5 (N), -122.08 > -135 (E) → NE
+                                                  └──────┬──────┘
+                                                        |
+                                                  ┌──────▼──────┐
+                                                  │ NE: 10K     │
+                                                  │ ...         │
+                                                  │ (continue)  │
+                                                  └──────┬──────┘
+                                                        |
+                                                  ┌──────▼──────┐
+                                                  │ [Leaf: 50]  │ ← Found!
+                                                  │ Businesses: │
+                                                  │ [id1, id2...]│
+                                                  └─────────────┘
 
               - Data model
                   business info
