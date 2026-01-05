@@ -793,8 +793,8 @@ Time to understand scalability, latency aspects
                 - location cache, 
                 - redis pub/sub lightweight 
                   -  How many servers 
-                      - total is 10 million connections and 100B each connection and just 1 GB of memory. So its not memory bound. 
-                      - Worst case ~10 million updates per second, so its IO bound and modern 1 Gbps network can holds  ~ 100K updates (100 MB/100B ~ 1M updates and /10 due to unexpected bandwidth) so need 100 servers for 10 million connections 
+                      - total is 10 million connections ( 1 million users * 10 friends) and 100B each connection and just 1 GB of memory. So its not memory bound. 
+                      - Worst case ~10 million updates per second, so its IO bound and with modern 1 Gbps network,   you need 100 servers for 10 million connections (10 million * 100B / 100MB and *10 due to unexpected bandwidth)
                   - redis pub/sub server will use consistent hashing with zookeeper having its address, 
                   - websocket servers register to the updates from zookeeper which stores the ring structure (example : node1, node2, node3, node 2, node 1, node 4) and hashfunction 
                   - websocket servers stores the all list of channel ids it subscribed to 
