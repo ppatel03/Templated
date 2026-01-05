@@ -690,7 +690,7 @@ Time to understand scalability, latency aspects
                           - Each grid can store a maximal of 100 businesses
                           - Number of leaf nodes = ~200 million / 100 = ~2 million
                           - Number of internal nodes = 2 million * 1/3 = ~0.67 million. If you do not know why the number of internal nodes is one-third of the leaf nodes
-                          - Total memory requirement = 2 million * 832 bytes + 0.67 million * 64 bytes = ~1.71 GB
+                          - Total memory requirement = 2 million * 832 bytes (store four coordinates to identify grid + list of business ids) + 0.67 million * 64 bytes (store four coordinates to identify grid) = ~1.71 GB
                         - Pros 
                             - solves popular cities problem of Geohash
                             - avoids prefix based neighbour searches for not enough business in Geohash 
@@ -706,7 +706,7 @@ Time to understand scalability, latency aspects
                                                               -> DB (business info)
                       - How is user lat and long converted to geohash to search in geohash DB
                         - simply by binary encoding + recursive division 
-                          - Example , say for lat = 37.9, long = -122.8
+                          - Example , say for lat = 37.4, long = -122.08
                             - For latitdue 
                               - Iteration 1: Is 37.422408 in [0, 90]? YES → bit = 1  New range: [0, 90]  
                               - Iteration 2: Is 37.422408 in [45, 90]? NO → bit = 0  New range: [0, 45]
