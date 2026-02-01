@@ -591,16 +591,18 @@ Time to understand scalability, latency aspects
                                                                                                       │
                                                                                                       ├─ Compare "apply"
                                                                                                       └─ Compare "apt" (STOP)
-                      - Complexity : O(log n + k*m + disk_io_overhead)
+                      - Complexity : O(l*log n + k*m + disk_io_overhead)
                           where:
+                            l = max length of word in the tree ( each node need string comparison)
                             n = total number of words
                             k = number of words matching the prefix
-                            String comparison per entry: O(m) where m = average word length
+                            String comparison per entry: O(m) where m = average word length matching prefix
                   - Trie Data structure with frequency stored at every node with EOW = true 
-                      Complexity :   O(m + k)
+                      Complexity :   O(p + k*26 + klogk) : O(p + k + klogk) : O(p+k)
                           where:
-                            m = length of prefix (e.g., "app" = 3)
+                            p = length of prefix (e.g., "app" = 3)
                             k = number of words matching the prefix
+
                   - But to fetch top 5 suggestions by frequency, complexity O(m)  + O(k) + O(sort by frequency)
                     - if we limit prefix length to search say p=10 and cache top 5 search at every node, then complexity will be constant
                   -  Trie cache will be in memory in form of trie structure
