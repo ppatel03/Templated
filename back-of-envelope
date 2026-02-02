@@ -857,7 +857,7 @@ Time to understand scalability, latency aspects
                   Metrics Source -> Metrics Collector -> Timeseries DB -> Query Service -> Alert Manager (uses alert rules) -> Notification service 
                                                                                  -> Visualization 
               - Push vs Pull
-                - Prometheus is pull based vs InfluxDB is pull based
+                - Prometheus is pull based vs InfluxDB is push based
               - Queue for Metrics Collector (parition by metrics name, topic by region, further tags for filters, )
               - Storage optimization (RLE and Delta compression, downsampling & retention )
               - Alerting system (how to dedup - check if alert message is already provided)
@@ -884,10 +884,10 @@ Time to understand scalability, latency aspects
               - Improved data model since room_id cannot be decided at booking time 
                   - hotel (hotel id, ..)
                   - user (user id, ..)
-                  - room_type_inventory (hotel id, room type id, # available)
+                  - room_type_inventory (room type id, hotel id,  # available)
                   - reservation (reservation id, hotel id, room type id,  user id, start date, end date)
-                  - room (room id, room type id, floor) populated during check-in
-              - Idempotency through checkout id
+                  - room (room id, room type id, user id, floor,) populated during check-in
+              - Idempotency through checkout id/reservation id
               - concurrency issues 
                 - Pessimistic locking (like Serializable isolation, low performant and block the reads, depends on DB support for locking)
                 - Optimistic locking 
