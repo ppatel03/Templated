@@ -924,7 +924,7 @@ Time to understand scalability, latency aspects
                 - Ban spammers, 
                 - Feedback processing, 
                 - Good relationship with ISPS
-              - Authentication : SPF (sender policy framework, Domain based message authentication). As an example, you can see that in "signed-by" section to every email
+              - Authentication : common techniques to combat phishing are: SPF (sender policy framework) and Domain based message authentication. As an example, you can see that in "signed-by" section to every email
               - Search store : elastic search out of box 
               - Others : Compliance using GDPR, Storage optimization by deduping attachments
             20. S3-like Object Storage
