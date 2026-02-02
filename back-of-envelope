@@ -909,7 +909,7 @@ Time to understand scalability, latency aspects
                     Internel -> LB -> SMTP Server -> Incoming queue -> Mail processor (check spam, virus) -> Web socket server -> Client 
                                           |                                                               -> Notification service if offline
                                  Storage (metadata, search store, object store, cache)
-              - Metadata DB (relational -> user_folder (user_id, folder_id),  folder_emails(message_id, folder_id, from, to, subject, link_to_s3, is_read, etc.))
+              - Metadata DB (relational -> folder(folder_id, folder name), user(user id, details), user_folder (id, user_id, folder_id),  folder_emails(id, message_id, folder_id, from, to, subject, link_to_s3, is_read, etc.))
 
               - Queries : 
                 1. get all folders of users : parition key (user id) 
