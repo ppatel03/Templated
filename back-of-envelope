@@ -966,7 +966,10 @@ Time to understand scalability, latency aspects
                   - fixed partition using scores which is range partitioning (easy for reads esp. top 10, hard for writes since users will keep moving across parition for score updates)
                   - hash slot based partition based on key (hard to get top 10, need to read every shard). One option is you can return scores in percentiles which is rank within shard.
               - Other DB option is Dynamo which uses consistent hashing 
-                  - If game_id + date (year+month only) is used as shard with score as sort key, then what about hot shard for recent game. Add random number across the key and distribute it across the shard. Only challenge is it adds reads complexity to get partition #. 
+                  - If game_id + date (year+month only) is used as shard with score as sort key, then what about hot shard for recent game. Add random number as partition# across the key and distribute it across the shard.  
+                  - So now you parition key becauses game+date+partition# . But to read items for a given month, we have to query all the partitions and merge the results, which adds read complexity. Solution is use GSI ( Global secondary index) here. 
+                    -  game+date+partition# and score as sort key
+                    -  What we end up with are N partitions that are all sorted within their own partition (locally sorted). If we assume we had 3 partitions, then in order to fetch the top 10 leaderboard, we would use the approach called “scatter-gather” mentioned earlier. We would fetch the top 10 results in each of the partitions (this is the “scatter” portion), and then we would allow the application to sort the results among all the partitions (this is the “gather” portion).
                   - One option is you can return scores in percentiles which is rank within shard.
               - How to implement  report scores if there is a Tie (may be one which got the score first - so timestamp based)
             22. Payment System 
