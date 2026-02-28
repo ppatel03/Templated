@@ -1190,7 +1190,8 @@ Time to understand scalability, latency aspects
               - Software efficiency, 
                 - support async I/O to avoid memory consuming threads blocked on I/O and not being able to utilize CPU
               - Demand efficiency, 
-                - identify bottlenecks for jobs which does overfetching    
+                - identify bottlenecks for jobs which does overfetching
+                - cache especially for stream to table join     
             - Scheduler level 
               - Solver based scheduler to help binpacking 
                 - place it with resource awareness (CPU, Memory) - workload to instance affinity to avoid fragmentation
