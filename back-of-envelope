@@ -1118,6 +1118,7 @@ Time to understand scalability, latency aspects
               - Concensus by providing total order broadcast + (vs Raft - https://stackoverflow.com/questions/47760448/what-is-the-difference-between-zookeeper-and-raft )
               - leader election + 
               - failure detection + 
+              - locking+
               - subscribe to config change updates + 
               - consistent, high available state storage
             Zookeeper is best deployed for small pieces of state where linearizability and high availability is critical. (https://aphyr.com/posts/291-call-me-maybe-zookeeper)
@@ -1128,7 +1129,7 @@ Time to understand scalability, latency aspects
         12. Reduce Storage Size
             - move infrequent data to Amazon S3 glacier
             - avoid short-term checkpoints
-            - retention policies after 1+ year
+            - retention + downsampling policies after 1+ year
             - compression - RLE, Delta compression for timeseries
         13. Latency 
             - caching 
@@ -1182,15 +1183,28 @@ Time to understand scalability, latency aspects
             
         22. How to ensure good Job placement for a Job manager / resource manager ? 
           https://medium.com/pinterest-engineering/tuning-flink-clusters-for-stability-and-efficiency-50d3d50384ed 
-            - place it with resource awareness (CPU aware) , 
-            - place it with machine type awareness based on bottleneck resources (cpu-instance hardware vs memory instances) 
-            - place soft limits on jobs using Cgroups and some proportion reserved for burst capacity (each job needs during start up). However, also look for ways to avoid internal fragmentation / banding.     
-            - place consecutive subtasks belong to same job on same hosts  (it also reduces network bandwidth)
-            - Premptive priority based scheduling for resource constraints
-              - https://www.geeksforgeeks.org/preemptive-priority-cpu-scheduling-algortithm/# 
-              - Other method is SJFS (Shortest job first)
-            - For software efficiency, support async I/O to avoid memory consuming threads blocked on I/O and not being able to utilize CPU
-            - For demand efficiency, identify bottlenecks for jobs which does overfetching 
+            - Scheduling efficiency 
+            - Workload level 
+              - Reliability 
+                - place soft limits on jobs using Cgroups and some proportion reserved for burst capacity (each job needs during start up). However, also look for ways to avoid internal fragmentation / banding. 
+              - Software efficiency, 
+                - support async I/O to avoid memory consuming threads blocked on I/O and not being able to utilize CPU
+              - Demand efficiency, 
+                - identify bottlenecks for jobs which does overfetching    
+            - Scheduler level 
+              - Solver based scheduler to help binpacking 
+                - place it with resource awareness (CPU, Memory) - workload to instance affinity to avoid fragmentation
+                - place it with machine type awareness based on bottleneck resources (cpu-instance hardware vs memory instances)
+                - overhead in mind ( sidecar overhead, node overhead ) 
+              - Volcano like support 
+                - place consecutive subtasks belong to same job on same hosts  (it also reduces network bandwidth)
+                - Gang scheduling for ML
+              - Yunikorn like support for governance 
+                - quota fairness 
+                - Within the Quota, Premptive priority based scheduling 
+                  - https://www.geeksforgeeks.org/preemptive-priority-cpu-scheduling-algortithm/# 
+                  - Other method is SJFS (Shortest job first)
+             
 
         23. How to effectively do multi-leader replication ? (all relational DBs, Kafka, Redis)
             Great video : 
