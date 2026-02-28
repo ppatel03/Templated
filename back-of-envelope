@@ -1183,7 +1183,6 @@ Time to understand scalability, latency aspects
             
         22. How to ensure good Job placement for a Job manager / resource manager ? 
           https://medium.com/pinterest-engineering/tuning-flink-clusters-for-stability-and-efficiency-50d3d50384ed 
-            - Scheduling efficiency 
             - Workload level 
               - Reliability 
                 - place soft limits on jobs using Cgroups and some proportion reserved for burst capacity (each job needs during start up). However, also look for ways to avoid internal fragmentation / banding. 
@@ -1201,8 +1200,8 @@ Time to understand scalability, latency aspects
                 - place consecutive subtasks belong to same job on same hosts  (it also reduces network bandwidth)
                 - Gang scheduling for ML
               - Yunikorn like support for governance 
-                - quota fairness 
-                - Within the Quota, Premptive priority based scheduling 
+                - Quota fairness 
+                - Premptive priority based scheduling 
                   - https://www.geeksforgeeks.org/preemptive-priority-cpu-scheduling-algortithm/# 
                   - Other method is SJFS (Shortest job first)
              
