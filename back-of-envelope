@@ -1271,7 +1271,8 @@ Time to understand scalability, latency aspects
                Software errors are a systematic error within the system, they tend to cause many more system failures than uncorrelated hardware faults.
             Human errors.
               Humans are known to be unreliable. Configuration errors by operators are a leading cause of outages. You can make systems more reliable:
-              1. - Telemetry - Metrics Monitoring set up. Availability + Reliability (latency + error rate).
+              1. - Telemetry - Metrics Monitoring set up - Business metrics, Engagement metrics, Reliability 
+                - Highly available, performant (latency), resilient, consistent ( correctess, error rate, durable), scalable (saturation - cpu, mem) systems with change safe (change failure rate) user (APDEX, user filed bugs) operations (logging, metrics, alerts, pagerduty).
               2. - Code quality : Test coverage with unit and e2e tests and maturity level from tools like sonarcube.
               3. - Sandbox : Provide fully featured non-production sandbox environments where people can explore and experiment safely.
               4. - Rollback using config : Quick and easy recovery from human error, fast to rollback configuration changes, 
@@ -1281,7 +1282,7 @@ Time to understand scalability, latency aspects
               - Minimising the opportunities for error, peg: with admin interfaces that make easy to do the "right thing" and discourage the "wrong thing".
               - Implement good management practices and training.
 
-          27. Whats the reasonable performance SLA ? 
+          27. Whats the reasonable performance SLA (SLA is for customers defining service commitments and penalties 99.9% vs SLO - internal, more stricter 99.99% to avoid landing in SLA zone ) ? 
               Service level objectives (SLOs) and service level agreements (SLAs) are contracts that define the expected performance and availability of a service. An SLA may state the median response time to be less than 200ms and a 99th percentile under 1s. These metrics set expectations for clients of the service and allow customers to demand a refund if the SLA is not met.
           28. Approaches for coping with the load ? 
                   Scaling up or vertical scaling: Moving to a more powerful machine
@@ -1311,6 +1312,36 @@ Time to understand scalability, latency aspects
           32. When to use graph like data model 
               If many-to-many relationships are very common in your application, it becomes more natural to start modelling your data as a graph. A graph consists of vertices (nodes or entities) and edges (relationships or arcs).
               There are several ways of structuring and querying the data. The property graph model (implemented by Neo4j, Titan, and Infinite Graph) and the triple-store model (implemented by Datomic, AllegroGraph, and others). There are also three declarative query languages for graphs: Cypher, SPARQL, and Datalog. Cypher is a declarative language for property graphs created by Neo4j
+                https://chatgpt.com/c/69a38c8c-5fe0-8329-bc3b-fd76ecb7136f
+                  Graph DBs store data in two main forms:
+
+                      1. Adjacency list (most common)
+
+                          Each node stores a list of outgoing (and optionally incoming) edges
+
+                          Each edge stores:
+
+                          Target node ID
+
+                          Edge type / label
+
+                          Optional properties
+
+                          Visually:
+
+                          Node A:
+                            -> Edge (type=FRIENDS_WITH) -> Node B
+                            -> Edge (type=LIKES) -> Node C
+
+                      This is extremely efficient for traversals, because you can follow pointers in O(1) per edge.
+
+                      2. Edge table / triple store (used in RDF engines like Virtuoso, Blazegraph)
+
+                          All edges stored in a table/triple format: (source, target, label)
+
+                          Often indexed for fast lookup by source, target, or label
+
+                          More flexible for semantic queries (RDF/SPARQL) but slightly slower for deep traversals
           33. Types of indexes ? 
               https://github.com/keyvanakbary/learning-notes/blob/master/books/designing-data-intensive-applications.md#sstables-and-lsm-trees 
               Hash tables index - Riak (Bitcask)
