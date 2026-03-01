@@ -1220,7 +1220,6 @@ Time to understand scalability, latency aspects
               - Leaderless/MultiLeader :Conflict on write (calls conflict resolution code on write like CRDTs)
               - Leaderless/MultiLeader :Version vectors (like in Riak 2.0) 
 
-              Multi-leader replication is implemented with Tungsten Replicator for MySQL, BDR(bi-directional replication) for PostgreSQL or GoldenGate for Oracle. MySQL uses circular topology for its replication.
 
             - the common use case is multi-datacenter need where there is a leader in each datacenter
             - make sure there is atleast quorum consistency ( strong ) consistency in each datacenter
@@ -1228,19 +1227,24 @@ Time to understand scalability, latency aspects
             - for conflicts, use different strategies shared above
               - some details about version vectors - (also helps with ordering) - RiakDB
                 https://youtu.be/1BXCxpcsmzc?t=524 
-                - merging siblings are hard even with version vectors. You need to use something advanced called CRDTs (Riak DB, Redis, Cassandra)
+                - merging siblings are hard even with version vectors. You need to use something advanced called CRDTs (Riak DB, Redis, Cassandra in form of (node,counters) pair, DynamoDB also supports (node, counter) pairs)
                     - How CRDT is implemented ? - https://www.youtube.com/watch?v=FG5Varj1Ows 
                         - Operational CRDT : just the operation (like inc or dec) is sent instead of vectors. usually used in counters.
                         - State based CRDT : entire vector is sent (like vec[add(1,2), remove(1)] ). It helps with causal relationship. usually used in adding elements to the list
                         - Sequence CRDT : builds an eventually consistent list. Its hard. used in collaborative editors like Google docs. Example, using decimal and placing random number range in between decimals for insertion. [(H, 0.1), (!, 0.3)] U [(H, 0.1), (i, 0.2), (!, 0.3)] -> H!(already in DB) + Hi!(node2) -> Hi!
-              - for ordering, you can use sequence number from lamport timestamp - recency guarantee (just incrementing version to get latest versions) 
+              - for ordering, you can use sequence number from lamport timestamp or zookeeper zxid - recency guarantee (just incrementing version to get latest versions) 
 
               ONE FACT WITH RELATIONAL DBS : 
+
+                Multi-leader replication is implemented with Tungsten Replicator for MySQL, BDR(bi-directional replication) for PostgreSQL or GoldenGate for Oracle. MySQL uses circular topology for its replication.
+                
                 To order these events correctly, a technique called version vectors can be used, which we will discuss later in this chapter (see “Detecting Concurrent Writes” on page 184). However, conflict detection techniques are poorly implemented in many multi-leader replication systems. For example, at the time of writing, PostgreSQL BDR does not provide causal ordering of writes [27], and Tungsten Replicator for MySQL doesn’t even try to detect conflicts [34].
 
               Examples of Leaderless replication : Riak, Cassandra, Dynamo.
+
               So how does multi-datacenter operation works for leaderless replication ? 
-                  Each write from a client is sent to all replicas, regardless of datacenter, but the client usually only waits for acknowledgement from a quorum of nodes within its local datacenter so that it is unaffected by delays and interruptions on cross-datacenter link.
+                - Each write from a client is sent to all replicas, regardless of datacenter, but the client usually only waits for acknowledgement from a quorum of nodes within its local datacenter so that it is unaffected by delays and interruptions on cross-datacenter link.
+                - Across leaders in each datacenter, you can resolve conflicts with version vectors and CRDTs ( during write or during read)
 
         24. How to maintain data consistency between databasesm internal services, internal service + third party ? 
               - To maintain data consistency between replicas, use strong consistency ( quorum consistency) or eventual consistency.
