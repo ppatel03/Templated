@@ -1447,6 +1447,25 @@ Time to understand scalability, latency aspects
 
                           This is why analytical DBs love bitmap encoding.
 
+                      - Difference vs Dictionary Encoding
+
+                          Often bitmap encoding is used with dictionary encoding:
+
+                          Step 1: Dictionary encode values
+                            Active → 0
+                            Inactive → 1
+                            Pending → 2
+
+                          Step 2: Build bitmap per dictionary ID.
+
+                          Most modern columnar engines combine:
+
+                            Dictionary encoding
+
+                            Bitmap indexing
+
+                            Compression
+
                     Challenge with bitmap encoding : 
                       1. High Cardinality: Columns with many distinct values (e.g., UserID) are poorly suited, as storing a bitmap per value becomes inefficient.
                       2. Sparse Data: If most bits in a bitmap are 0, compression gains diminish (though techniques like run-length encoding can mitigate this).
