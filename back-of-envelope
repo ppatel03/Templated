@@ -1487,15 +1487,16 @@ Time to understand scalability, latency aspects
                       The key idea with Avro is that the writer’s schema and the reader’s schema don’t have to be the same—they only need to be compatible. When data is decoded (read), the Avro library resolves the differences by looking at the writer’s schema and the reader’s schema side by side and translating the data from the writer’s schema into the reader’s schema. The Avro specification [20] defines exactly how this resolution works, and it is illustrated in Figure 4-6.
               38. How to rebalance partitions ? 
                     - How not to do it: Hash mod n. The problem with mod N is that if the number of nodes N changes, most of the keys will need to be moved from one node to another.
-                    - Fixed number of partitions. Create many more partitions than there are nodes and assign several partitions to each node. If a node is added to the cluster, we can steal a few partitions from every existing node until partitions are fairly distributed once again. The number of partitions does not change, nor does the assignment of keys to partitions. The only thing that change is the assignment of partitions to nodes. This is used in Kafka brokers(refer kafka system design), Riak, Elasticsearch, Couchbase, and Voldemport. You need to choose a high enough number of partitions to accomodate future growth. Neither too big or too small.
+                    - Fixed number of partitions. Create many more partitions than there are nodes and assign several partitions to each node. If a node is added to the cluster, we can steal a few partitions from every existing node until partitions are fairly distributed once again. The number of partitions does not change, nor does the assignment of keys to partitions. The only thing that change is the assignment of partitions to nodes. This is used in Kafka brokers(refer kafka system design), Riak, Elasticsearch, Couchbase, Clickhouse and Voldemport. You need to choose a high enough number of partitions to accomodate future growth. Neither too big or too small.
                     - Dynamic partitioning. The number of partitions adapts to the total data volume. An empty database starts with an empty partition. While the dataset is small, all writes have to processed by a single node while the others nodes sit idle. HBase and MongoDB allow an initial set of partitions to be configured (pre-splitting).
                     - Partitioning proportionally to nodes. Cassandra and Ketama make the number of partitions proportional to the number of nodes. Have a fixed number of partitions per node. This approach also keeps the size of each partition fairly stable. Example, In consistent hashing when new node is added, only its preceding neighbour node keys are affected.
               39. Is rebalance have to be manual ? 
-                    Fully automated rebalancing may seem convenient but the process can overload the network or the nodes and harm the performance of other requests while the rebalancing is in progress.
+                    Fully automated rebalancing may seem convenient but the process can overload the network or the nodes can harm the performance of other requests while the rebalancing is in progress.
                     It can be good to have a human in the loop for rebalancing. You may avoid operational surprises.
+                    However, Pinterest has solved this problem with Orion ( sensor and operator) which detects node down and so when node is up, it assigns the new node as replica of the primary shard which then copies the data from primary by fetching all missing sequence numbers from Zookeeper
               40. How does the client knows to connect to right partition at right node ? 
                     This problem is also called service discovery. There are different approaches:
-                      - Allow clients to contact any node and make them handle the request directly, or forward the request to the appropriate node.
+                      - Allow clients to contact any node and make them handle the request directly, or forward the request to the appropriate node. 
                       - (Most common)Send all requests from clients to a routing tier first that acts as a partition-aware load balancer.
                       - (Cassandra, Riak) Make clients aware of the partitioning and the assignment of partitions to nodes using Gossip protocal.
                       In many cases the problem is: how does the component making the routing decision learn about changes in the assignment of partitions to nodes?
@@ -1584,7 +1585,7 @@ Time to understand scalability, latency aspects
 
                     This could be implemented in two ways:
 
-                    Microservices approach, the code that processes the purchase would probably wuery an exchange-rate service or a database in order to obtain the current rate for a particular currency.
+                    Microservices approach, the code that processes the purchase would probably query an exchange-rate service or a database in order to obtain the current rate for a particular currency.
                     Dataflow approach, the code that processes purchases would subscribe to a stream of exchange rate updates ahead of time, and record the current rate in a local database whenever it changes. When it comes to processing the purchase, it only needs to query the local database.
                     The dataflow is not only faster, but it is also more robust to the failure of another service.
               50. How do you ensure correctness of a stream or batch processing ? 
@@ -1634,7 +1635,7 @@ Time to understand scalability, latency aspects
                   Pg 532 DDIA
                   Cryptographic auditing and integrity checking often relies on Merkle trees [74], which are trees of hashes that can be used to efficiently prove that a record appears in some dataset (and a few other things). Outside of the hype of cryptocurrencies, certificate transparency is a security technology that relies on Merkle trees to check the val‐ idity of TLS/SSL certificates.
                   I could imagine integrity-checking and auditing algorithms, like those of certificate transparency and distributed ledgers, becoming more widely used in data systems in general. Some work will be needed to make them equally scalable as systems without cryptographic auditing, and to keep the performance penalty as low as possible. But I think this is an interesting area to watch in the future.
-                  dynamo anit-entropy relies on Merklee tree
+                  dynamo anti-entropy relies on Merklee tree
               53. How to distribute configs to thousands of servers in multiple datacenters reliably ? 
                   http://tinyurl.com/2x6ben4m 
                   - Use 3 level distribution tree Leader (zookeeper) -> Follower (zookeeper) -> cluster/datacenter observer -> server proxy binary inside host
@@ -1660,7 +1661,7 @@ Time to understand scalability, latency aspects
 
                   Non-deterministic functions such as NOW() or RAND() will generate different values on replicas.
                   Statements that depend on existing data, like auto-increments, must be executed in the same order in each replica.
-                  Statements with side effects may result on different results on each replica.
+                  Statements with side effects may result in having different results on each replica.
                   A solution to this is to replace any nondeterministic function with a fixed return value in the leader.
 
                 Write-ahead log (WAL) shipping
@@ -1857,9 +1858,26 @@ Distributed Systems estimate
             supports jmeter scripts
 
 
-    Modern fiber optic cable vs ethernet (copper) cable
-      - 10 Gbps vs 1 Gbps
+    Modern fiber optic cable  vs ethernet (copper) cable
+      - 1000 Gbps vs 100 Gbps 
       - https://www.cablewholesale.com/blog/index.php/2020/09/16/fiber-optic-vs-copper-ethernet-cables-the-difference/#:~:text=A%20more%20modern%20take%20on,much%20faster%20than%20copper%20cables.
+       
+    NVlink ( Intraserver GPU-GPU)
+      - 1 TB/s per GPU 
+      - 100 ns 
+
+    EFA ( Internode - AWS for Cloud HPC/AI Training)
+      - EFA (Elastic Fabric Adapter): AWS-customized network interface for EC2 instances, providing low-latency, OS-bypass capabilities for inter-node communication in HPC and AI workloads.
+      - How it does that ?
+        - using RDMA (Remote Direct Memory Access) which is a technology that allows one computer to access the memory of another computer directly, without involving the operating system's CPU or kernel. 
+         Why it matters: It eliminates the overhead of traditional TCP/IP networking, resulting in faster data transfers, lower latency, and less CPU load, which is critical for AI training and massive datasets.
+            Types: InfiniBand (native RDMA), RoCE (RDMA over Converged Ethernet), and iWARP
+      - 500 Gbps ( Cluster scale range)
+      - 10 us ( within datacenter/AZ)
+
+    ENA (Elastic Network Adapter) - supported by AWS EC2
+      - 100 Gbps 
+      - 100 us ( within datacenter/AZ - slightly better than roundtrip within datacenter which is 500 us) 
 
     Common Systems : 
     - Zookeeper avg req latency ~ 10 ms 
@@ -1883,13 +1901,13 @@ Distributed Systems estimate
             200 reads ~ 200 us
             200 writes ~ 1 ms (writes 4x slower)
           load test
-            48 cores, 3 node cluster
+            i3en.2xlarge (16 vCPUs, 64 GB)
             100K reads ~ 10-20 ms 
             100K writes ~ 100 ms (writes 4x slower)
     -  CockroachDB
          - Single row reads and writes
           https://www.cockroachlabs.com/docs/v22.2/performance.html
-          across availability zones - 3 node cluster, c5d.9xlarge (16v CPUs, 72 G RAM)
+          across availability zones - 3 node cluster,  i3en.2xlarge (16 vCPUs, 64 GB)
             100K-200K QPS
             single-row reads in 50-100 ms and processes 
             single-row writes in 50-100 ms
@@ -1898,13 +1916,13 @@ Distributed Systems estimate
             - p95 in 250-300 ms
     - Timeseries : OpenTSDB / InfluxDB
         Influx DB benchmarking from bytebytego : 
-            8 cores and 32GB RAM can handle over 250K writes per second, support storage greater than 1 M series,  25 burst read QPS
+            i3en.2xlarge (16 vCPUs, 64 GB,2 x 2,500 GB NVMe SSDs ) can handle over 250K writes per second, support storage greater than 1 M series,  25 burst read QPS
             (https://bytebytego.com/courses/system-design-interview/metrics-monitoring-and-alerting-system)
     - S3 
         3K-5K
         100–200 milliseconds
     - Cassandra
-        i3en.2xlarge (16 vCPUs, 64 GB), 3 node cluster
+        i3en.2xlarge (16 vCPUs, 64 GB, 2 x 2,500 GB NVMe SSDs), 3 node cluster
           Read : 100 K ops/s
           Write : 100 K ops/s
           Read Latency : ~10 ms
