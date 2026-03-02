@@ -1378,15 +1378,80 @@ Time to understand scalability, latency aspects
                   Amazon RedShift is hosted version of ParAccel. Apache Hive, Spark SQL, Cloudera Impala, Facebook Presto, Apache Tajo, and Apache Drill. Some of them are based on ideas from Google's Dremel.
                   Data warehouses are used in fairly formulaic style known as a star schema.
                   The name "star schema" comes from the fact than when the table relationships are visualised, the fact table is in the middle, surrounded by its dimension tables, like the rays of a star.
+                  Another open soure database for fast OLAP is Clickhouse DB ( column DB) but not for low cost cost storage workloads or for heavy batch processing workloads.
             36. How does column oriented DB work 
                   Column-oriented storage is simple: don't store all the values from one row together, but store all values from each column together instead. If each column is stored in a separate file, a query only needs to read and parse those columns that are used in a query, which can save a lot of work.
 
                   Column-oriented storage often lends itself very well to compression as the sequences of values for each column look quite repetitive, which is a good sign for compression. A technique that is particularly effective in data warehouses is bitmap encoding.
-                  Challenge with bitmap encoding : 
-                    1. High Cardinality: Columns with many distinct values (e.g., UserID) are poorly suited, as storing a bitmap per value becomes inefficient.
-                    2. Sparse Data: If most bits in a bitmap are 0, compression gains diminish (though techniques like run-length encoding can mitigate this).
 
-                  Remember : Cassandra and HBase have a concept of column families, which they inherited from Bigtable. THIS IS DIFFERENT FROM COLUMN-ORIENTED STORAGE
+                  https://chatgpt.com/g/g-p-698235e6d2ac8191b248a12be431269a-system/c/69a4dc01-7ca4-832c-853b-5bf708df5a0d 
+                    What is Bitmap Encoding?
+                      Instead of storing the raw value per row for a column, we create a bitmap (bit vector) per distinct value.
+                      - Example
+
+                        Suppose we have this table:
+
+                        RowID	Status
+                        1	Active
+                        2	Inactive
+                        3	Active
+                        4	Pending
+                        5	Active
+
+                        Distinct values:
+
+                          Active
+
+                          Inactive
+
+                          Pending
+
+                        We create 3 bitmaps:
+
+                        Active → 1 0 1 0 1
+                        Inactive → 0 1 0 0 0
+                        Pending → 0 0 0 1 0
+
+                        Each position corresponds to a row.
+
+                      - Why is this powerful?
+
+                          Now suppose query is:
+
+                          SELECT * FROM table WHERE Status = 'Active';
+
+                          Instead of scanning all rows:
+
+                          👉 We directly fetch the bitmap for "Active".
+
+                          Rows with bit = 1 are the result.
+
+                          This is O(n / word_size) because bit operations are extremely fast (CPU-level AND/OR instructions).
+
+                      - Even More Powerful: Multiple Filters
+
+                          Query:
+
+                          WHERE Status = 'Active'
+                          AND Country = 'US'
+
+                          Each column has its own bitmap.
+
+                          We just do:
+
+                          Bitmap(Status=Active)
+                          AND
+                          Bitmap(Country=US)
+
+                          This is a fast bitwise AND operation.
+
+                          This is why analytical DBs love bitmap encoding.
+
+                    Challenge with bitmap encoding : 
+                      1. High Cardinality: Columns with many distinct values (e.g., UserID) are poorly suited, as storing a bitmap per value becomes inefficient.
+                      2. Sparse Data: If most bits in a bitmap are 0, compression gains diminish (though techniques like run-length encoding can mitigate this).
+
+                    Remember : Cassandra and HBase have a concept of column families, which they inherited from Bigtable. THIS IS DIFFERENT FROM COLUMN-ORIENTED STORAGE like Clickhouse, Apache Druid, Amazon Redshift and Snowflake 
             37. How messages can be transfered over the network ? - Pg 116
                 say JSON message : { key : value} 
                   1. binary encoding (REST which uses base64)
