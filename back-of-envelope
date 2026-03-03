@@ -2044,8 +2044,45 @@ Distributed best practices
     Bloom Filter: Check if a requested item is in the cache before performing disk operations.
     Geohash: Used to build location-based services.
     HyperLogLog: Counting unique queries performed by users in a search.
+      - https://chatgpt.com/c/69a5ff3f-c94c-832d-be17-59255cc73e32
+       - HyperLogLog estimates the number of distinct elements using probability, not exact storage.
+
+              Instead of storing all unique values, it:
+
+              Hashes each element (e.g., user ID)
+
+              Looks at how many leading zeros appear in the hash
+
+              Uses that to estimate cardinality
+
+              Why leading zeros?
+
+              If you randomly hash numbers:
+
+              1 in 2 hashes start with 0
+
+              1 in 4 start with 00
+
+              1 in 8 start with 000
+
+              1 in 16 start with 0000
+
+              If you observe a hash with 10 leading zeros, you probably saw around 2¹⁰ ≈ 1024 distinct values.
+
+              Real-World Systems Using HLL
+
+                Redis (PFADD, PFCOUNT)
+
+                Apache Spark (approx_count_distinct)
+
+                Presto
+
+                Apache Druid
+
+                Google BigQuery
+
     Consistent Hashing: Used for efficient data distribution between the cluster’s nodes.
-    Merkle Tree: Used to detect inconsistencies between data replicas across multiple nodes.
+    Merkle Tree: Used to detect inconsistencies between data replicas across multiple nodes. Also used in certificate validation.
     Raft Algorithm: Used to achieve consensus on log replication.
     Lossy Count: Network traffic analysis, web analytics, and identifying heavy hitters.
     QuadTree: Used to build location-based services.
@@ -2053,6 +2090,25 @@ Distributed best practices
     Leaky Bucket: Used for rate limiting
     Rsync: Synchronizing files and directories between two different systems.
     Ray Casting: Used for geospatial analysis, collision detection in video games, and computer graphics.
+          https://chatgpt.com/c/69a5ff3f-c94c-832d-be17-59255cc73e32 
+          Ray casting answers:
+
+          Is this point inside this polygon?
+
+          Algorithm:
+
+          Draw horizontal ray
+
+          Count intersections with edges
+
+          Odd = inside
+
+          Used after spatial filtering.
+
+          Example:
+
+          S2 narrows to 10 cells.
+          Ray casting confirms which are inside polygon.
 
   Smallest short length required ( say for tiny url )
     The hashValue consists of characters from [0-9, a-z, A-Z], containing 10 + 26 + 26 = 62 possible characters. To figure out the length of hashValue, find the smallest n such that 62^n ≥ 365 billion. 
