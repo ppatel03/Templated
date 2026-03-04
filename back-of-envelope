@@ -2126,7 +2126,7 @@ Distributed best practices
 
           S2 narrows to 10 cells.
           Ray casting confirms which are inside polygon.
-    Bitmap encoding: Used in column based databases (like ClickHouse, Apache Druid, Amazon Redshift, Snowflake) store data column-wise instead of row-wise for "select *" searches https://chatgpt.com/g/g-p-698235e6d2ac8191b248a12be431269a-system/c/69a4dc01-7ca4-832c-853b-5bf708df5a0d 
+    Bitmap encoding: Used in column based databases (like ClickHouse, Apache Druid, Amazon Redshift, Snowflake) which store data column-wise instead of row-wise. Use case is when user queries row wise info "select * from users where status = Active" and it returns 1010 which means 1st and 3rd row is active. https://chatgpt.com/g/g-p-698235e6d2ac8191b248a12be431269a-system/c/69a4dc01-7ca4-832c-853b-5bf708df5a0d 
 
   Smallest short length required ( say for tiny url )
     The hashValue consists of characters from [0-9, a-z, A-Z], containing 10 + 26 + 26 = 62 possible characters. To figure out the length of hashValue, find the smallest n such that 62^n ≥ 365 billion. 
