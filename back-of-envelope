@@ -760,7 +760,24 @@ Time to understand scalability, latency aspects
                                                   │ Businesses: │
                                                   │ [id1, id2...]│
                                                   └─────────────┘
-
+                   -  How is user lat and long is used to store and search in S2 ?
+                        https://chatgpt.com/c/69a5ff3f-c94c-832d-be17-59255cc73e32 
+                        - Challenge with Quad Tree 
+                          - Quadtree divides latitude and longitude evenly. But Earth curvature causes: 
+                            1) Near poles:  Longitudes converge and thus Cells represent much smaller real surface area
+                            2) Near equator: Cells represent larger surface area. So cell “square” in lat/lon is NOT square on Earth.
+                            That causes: Uneven real-world area per cell leading Uneven data distribution
+                          Why This Is Bad for Distributed Systems : Cells near poles are huge in count(lat/lon) but almost empty vs Cells near cities which are dense. Now your shards become imbalanced 
+                        - Challenge with Geohash  
+                          - Same as above on polar distortion 
+                          - Boundary problem
+                        - How Google S2 soves to avoid distortion ? 
+                        Step 1 — Wrap sphere in cube : Imagine Earth inside a cube. Now you have 6 faces.
+                        Step 2 — Project sphere onto cube faces : Each face becomes a square.
+                        Step 3 — Apply quadtree per face: Each face subdivides recursively.
+                        Step 4 — Encode as 64-bit ID : ID encodes Face number, Position in quadtree and Level
+                      - Why This Avoids Distortion ? 
+                        - Because: Subdivision happens on cube faces. Projection is designed to minimize distortion and Cells are more uniform in surface area. So Polar regions do not shrink weirdly. Area difference is much smaller than Geohash.
               - Data model
                   business info
                     business id -> location info (lat and long), name, etc.
@@ -2109,6 +2126,7 @@ Distributed best practices
 
           S2 narrows to 10 cells.
           Ray casting confirms which are inside polygon.
+    Bitmap encoding: Used in column based databases (like ClickHouse, Apache Druid, Amazon Redshift, Snowflake) store data column-wise instead of row-wise for "select *" searches https://chatgpt.com/g/g-p-698235e6d2ac8191b248a12be431269a-system/c/69a4dc01-7ca4-832c-853b-5bf708df5a0d 
 
   Smallest short length required ( say for tiny url )
     The hashValue consists of characters from [0-9, a-z, A-Z], containing 10 + 26 + 26 = 62 possible characters. To figure out the length of hashValue, find the smallest n such that 62^n ≥ 365 billion. 
