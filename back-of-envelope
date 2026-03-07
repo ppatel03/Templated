@@ -2180,8 +2180,12 @@ Distributed best practices
 
   Master election concensus algo
       Ensure all replicas are always in-sync and master->slave is elected correctly when master goes down. We could use consensus algorithms such as Paxos [21] and Raft [22], or use consensus-based distributed databases such as YugabyteDB [23] or CockroachDB [24].
+        - Raft 
           https://bytebytego.com/courses/system-design-interview/stock-exchange 
           The leader sends heartbeat messages (AppendEnties with no content as shown in Figure 21) to its followers. If a follower has not received heartbeat messages for a period of time, it triggers an election timeout that initiates a new election. The first follower that reaches election timeout becomes a candidate, and it asks the rest of the followers to vote (RequestVote). If the first follower receives a majority of votes, it becomes the new leader.
+          How does Raft avoids tie possibilities ?  
+            Since election timeout ( 150 - 300ms) for each follower is different to start new election, its easier to get the concensus and avoid a tie. Example for a 5 node cluster, if say node 2, 3, 4, 5 which are followers did not get heartbeat from leader node 1, then only one follower node with earliest timeout (say 50 ms and rest nodes are over 100 ms or higher due to randomization) starts new election and gets voted as leader.
+
       Nice visual - https://raft.github.io/
       Raft is one of the best concensus algo since it also helps in ensuring strong consistency for distributed transaction in cockroachDB https://github.com/cockroachdb/cockroach/blob/master/docs/design.md
       Even when new node is lagging behind or came live, leader in raft sends replication log along with the heartbeat to keep it consistent http://thesecretlivesofdata.com/raft/#replication 
