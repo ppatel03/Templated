@@ -2198,7 +2198,7 @@ Distributed best practices
 
   Failure handling algo
   - for temporary failures
-      1. Sloppy quorum and hinted handoff (for Leaderless replication)
+      1. Sloppy quorum and hinted handoff (for Leaderless replication in Cassandra, DynamoDB and RiakDB)
           https://github.com/keyvanakbary/learning-notes/blob/master/books/designing-data-intensive-applications.md#sloppy-quorums-and-hinted-handoff
           Leaderless replication may be appealing for use cases that require high availability and low latency, and that can tolerate occasional stale reads.
 
@@ -2214,7 +2214,22 @@ Distributed best practices
             Once the network interruption is fixed, any writes are sent to the appropriate "home" nodes (hinted handoff).
 
             Sloppy quorums are useful for increasing write availability: as long as any w nodes are available, the database can accept writes. This also means that you cannot be sure to read the latest value for a key, because it may have been temporarily written to some nodes outside of n
-
+        
+          How sloppy quorum works ? 
+            https://chatgpt.com/g/g-p-698235e6d2ac8191b248a12be431269a-system/c/68ccd978-c4d0-832f-ab97-932e46492b81 
+              Step 1 — Normal replica set
+                Key K → A B C
+              Step 2 — B crashes
+                A C available
+              Step 3 — Sloppy quorum write
+                Write stored on:
+                  A C D
+              Step 4 — Hint recorded 
+                D stores hint: deliver to B
+              Step 5 — B recovers ( Hinted handoff)
+                D → send data to B
+              Final state:
+                A B C
 
         
   - detecting inconsistency          
