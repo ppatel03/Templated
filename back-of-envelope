@@ -2126,7 +2126,7 @@ Distributed best practices
 
           S2 narrows to 10 cells.
           Ray casting confirms which are inside polygon.
-    Bitmap encoding: Used in column based databases (like ClickHouse, Apache Druid, Amazon Redshift, Snowflake) which store data column-wise instead of row-wise. Use case is when user queries row wise info "select * from users where status = Active" and it returns 1010 which means 1st and 3rd row is active. https://chatgpt.com/g/g-p-698235e6d2ac8191b248a12be431269a-system/c/69a4dc01-7ca4-832c-853b-5bf708df5a0d 
+    Bitmap encoding: Used in column based databases (like ClickHouse, Apache Druid, Amazon Redshift, Snowflake) which store data column-wise instead of row-wise. Use case is storage optimization and row based search. Example, when user queries row wise info "select * from users where status = Active" and it returns 1010 which means 1st and 3rd row is active. https://chatgpt.com/g/g-p-698235e6d2ac8191b248a12be431269a-system/c/69a4dc01-7ca4-832c-853b-5bf708df5a0d 
 
   Smallest short length required ( say for tiny url )
     The hashValue consists of characters from [0-9, a-z, A-Z], containing 10 + 26 + 26 = 62 possible characters. To figure out the length of hashValue, find the smallest n such that 62^n ≥ 365 billion. 
@@ -2341,7 +2341,7 @@ Distributed best practices
           modern websites uses session id
           
           Oauth 2.0 work ? 
-            https://www.youtube.com/watch?v=CPbvxxslDTU
+            https://www.youtube.com/watch?v=996OiexHze0&t=3381s 
             JWT is data format for user information in the OpenID Connect standard, which is the standard identity layer on top of the OAuth 2.0 protocol. Nginx plus supports this - https://docs.nginx.com/nginx/admin-guide/security-controls/configuring-jwt-authentication
 
             Related to above 
@@ -2352,6 +2352,7 @@ Distributed best practices
           https://stytch.com/blog/jwts-vs-sessions-which-is-right-for-you/ 
           - session id needs db look up after authentication although nginx can cache it
           - jwt does not need db look up since all necessary info is contained in the client request. Invalidating JWT token is complex so token is valid even after log out.
+          So as per Oauth2.0 video (https://www.youtube.com/watch?v=996OiexHze0&t=3381s), the recommendation for backend service is to convert JWT token received from SSO/Authorization server to session id and give it to the browser/client.
       
       How to send passwords from client to server
         https://github.dev/ppatel03/System-design/blob/main/back-of-envelope 
@@ -2399,6 +2400,16 @@ Distributed best practices
             mostly used in back-end of user auth such user info     extends user creds to the cloud  
             source of truth for IDP                                 its not SOT but protocol for exchanging authenication between directories and web apps. 
             used in Linux applications like OpenVPN, docker         used by IAM providers like Okta 
+          Why companies still use LDAP ? 
+            https://chatgpt.com/g/g-p-698235e6d2ac8191b248a12be431269a/c/6977aac8-0f54-8328-9f75-705ccdc8b96b 
+            Large enterprise:
+              1. Employees stored in Active Directory (LDAP)
+              2. Active Directory (LDAP) syncs to Okta
+              3. Apps use OAuth2 via Okta
+            So login flow:
+              App → Okta (OAuth)
+              Okta → Active Directory (LDAP)
+              LDAP verifies password
 
   Network/s / Networking
     OSI model
