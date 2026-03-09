@@ -2627,6 +2627,26 @@ Distributed best practices
     - Google Spanner (the next CockroachDB) provides time intervals using Google's Truetime API(deploys GPS receiver or atomic clock in each datacenter) to support visibility into accuracy of its time. - Pg 294 DDIA
     - Using above, Google Spanner implements snapshot isolation across datacenters based on timestamp with intervals reported above
     - To improve accuracy, Google deploys GPS or atomic clock in each datacenter with guarantee SLA of 10 ms
+    - Better explanation : https://chatgpt.com/c/69ae6a38-85b4-8329-baae-60fdf7968b52 
+    | Technology   | Purpose                         | Accuracy    | Where used          |
+    | ------------ | ------------------------------- | ----------- | ------------------- |
+    | Atomic Clock | Generate true time              | picoseconds | national labs       |
+    | GPS          | Broadcast precise time globally | ~10–40 ns   | telecom, navigation |
+    | NTP          | Distribute time via internet    | 1–10 ms     | servers, computers  |
+    | PTP          | Ultra-precise network sync      | <1 µs       | trading, telecom    |
+    - Real world example ( cloud datacenter )
+                Atomic clock (NIST)
+                  ↓
+          GPS satellite
+                  ↓
+          Datacenter GPS receiver
+                  ↓
+          Stratum 1 NTP server
+                  ↓
+          Stratum 2 servers
+                  ↓
+          Your Kubernetes node
+
 
   Dynamic rendering to allow search engines to parse content
     https://developers.google.com/search/docs/crawling-indexing/javascript/dynamic-rendering 
