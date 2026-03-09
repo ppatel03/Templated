@@ -2703,7 +2703,7 @@ Distributed best practices
 
   Alternative designs for aggregation
     https://bytebytego.com/courses/system-design-interview/ad-click-event-aggregation 
-    In a generalist system design interview, you are not expected to know the internals of different pieces of specialized software used in a big data pipeline. Explaining your thought process and discussing trade-offs is very important, which is why we propose a generic solution. Another option is to store ad click data in Hive, with an ElasticSearch layer built for faster queries. Aggregation is usually done in OLAP databases such as ClickHouse [24] or Druid [25]. Figure 29 shows the architecture.
+    In a generalist system design interview, you are not expected to know the internals of different pieces of specialized software used in a big data pipeline. Explaining your thought process and discussing trade-offs is very important, which is why we propose a generic solution. Another option is to store ad click data in Hive, with an ElasticSearch layer built for faster queries used by Data Scientist. Since elastic search is expensive and thus, for consumer facing systems -  you can have Aggregation done in OLAP databases such as ClickHouse [24] or Druid [25]. Figure 29 shows the architecture.
 
 
   Line protocol
