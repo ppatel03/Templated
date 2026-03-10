@@ -2759,14 +2759,42 @@ Distributed best practices
         - as name suggests, it locks the record while read + update
         - good when data contention is high
         - slows down performance
+        - However, most modern databases support row level locking for updates (exclusive lock) but allows concurrent when locked reads from last committed snapshot using MVCC. 
+          For details, refer https://chatgpt.com/c/69af7bf9-14c4-8332-bc94-a03b9a977986 
+        - Even with allowing parallel reads, it will slow down performance since pending writes will have to wait for lock
     2. Optimistic locking
         - has validation check based on version number. So no locking is needed. 
         - good when data contention is low and improves performances
         - bad when data contention is high 
+        - Example 
+          Many systems also use version columns.
+              rides table 
+              -----
+              ride_id
+              status
+              version
+
+              Query: 
+                UPDATE rides
+                SET driver_id=10,
+                version=version+1
+                WHERE ride_id=55
+                AND version=3
+
+              If another update happened:
+                version becomes 4
     3. database constraint
         - add constraint at table level
         - same as Optimistic and its easier to implement
-    another example when you need locking for optimistic or database constraint : when all uber drivers confirm the ride
+   
+    - another example when you need locking for optimistic or database constraint : when all uber drivers confirm the ride
+
+      Real techniques used by large companies : Systems like Uber combine multiple techniques.
+      Companies like Uber, Airbnb, Stripe use combinations of:
+        1. Conditional updates
+        UPDATE ... WHERE status='available'
+        2. Optimistic locking
+        WHERE version=5
 
   CI/CD practices
     https://www.youtube.com/watch?v=42UP1fxi2SY
