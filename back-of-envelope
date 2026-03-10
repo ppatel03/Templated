@@ -2451,7 +2451,7 @@ Distributed best practices
       HLS
         HLS is Apple’s streaming protocol. HLS stands for HTTP Live Streaming. Leveraging HTTP has many benefits. Internet infrastructure like firewalls and content delivery networks already handle HTTP.
         - key benefit of HLS is adaptive streaming. Adaptive streaming enables changing the quality of the video mid-stream. For example, if your internet connection starts slowing down, the bit rate can adapt to ensure the stream stays viewable. Despite the degradation in bandwidth.
-        - HLS only supports the H264 codec for video and AAC for audio.
+        - HLS only supports the H264 codec ( video compression 80% without quality compression ) for video and AAC (Advanced audio coding) for audio.
       DASH
         DASH stands for Dynamic Adaptive Streaming is an open standard and similar to HLS. It uses HTTP, small chunks and also supports adaptive streaming. A key difference between HLS and DASH is that DASH is codec agnostic. Hence you can use any codec you want.
 
@@ -2483,7 +2483,9 @@ Distributed best practices
     format
       1. Initiated by Client : Request and Response
       2. Initiated by Server : Data sent 
-    Websocket tunneling is possible with HaProxy LB : http://tinyurl.com/yurdrom2 
+    Websocket tunneling is possible with all LBs - HaProxy, Nginx, AWS ALB, Cloudfare CDN : http://tinyurl.com/yurdrom2 
+    Also client usually connects to websocket via LB in real world examples https://chatgpt.com/c/69ae0285-26e0-8326-9e00-b46ff7c8309d 
+      Client -> LB ( via TCP tunneling) -> Websocket server 
 
   REST API naming conventions 
     https://restfulapi.net/resource-naming/ 
@@ -2708,14 +2710,19 @@ Distributed best practices
 
   Line protocol
     https://bytebytego.com/courses/system-design-interview/metrics-monitoring-and-alerting-system
-      CPU.load host=webserver01,region=us-west 1613707265 76
-      CPU.load host=webserver01,region=us-west 1613707265 83
-
-      The average CPU load could be computed by averaging the values at the end of each line. The format of the lines in the above example is called the line protocol. It is a common input format for many monitoring software in the market. Prometheus [6] and OpenTSDB [7] are two examples.
-
-          A metric name	String
-          A set of tags/labels	List of <key:value> pairs
-          An array of values and their timestamps	An array of <value, timestamp> pairs
+    Better explanation : https://chatgpt.com/c/69af2dcf-0284-8327-bfc3-7106c417e00e 
+      Some TSDBs use line protocol as ingestion format. 
+      Example from InfluxDB:
+        cpu,host=server1,region=us-west usage_idle=87.1 1710000000
+      Format : 
+        measurement,tag_key=tag_value field_key=value timestamp
+      Breakdown:
+        measurement : cpu
+        tags        : host=server1
+        field       : usage_idle=87.1
+        timestamp   : 1710000000
+       
+    - Internally, it uses TSM + SSTable where SSTable are replaced by timeblocks of say 1 hr blocks 
 
   Push vs Pull model
       https://bytebytego.com/courses/system-design-interview/metrics-monitoring-and-alerting-system 
