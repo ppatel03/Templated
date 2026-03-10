@@ -2791,7 +2791,7 @@ Distributed best practices
 
       Real techniques used by large companies : Systems like Uber combine multiple techniques.
       Companies like Uber, Airbnb, Stripe use combinations of:
-        1. Conditional updates
+        1. Lock + Conditional updates
         UPDATE ... WHERE status='available'
         2. Optimistic locking
         WHERE version=5
