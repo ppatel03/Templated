@@ -2929,22 +2929,22 @@ Distributed best practices
 
      -------------------------------- Interesting open question on websocket ----------------------------
 
-              Client <-> Websocket server vs Client <-> LB <-> Websocker server
-                STILL A BIG QUESTION : https://stackoverflow.com/questions/65174175/how-do-websocket-connections-work-through-a-load-balancer 
-                Nice implementatiom : https://dzone.com/articles/load-balancing-of-websocket-connections
+              Client <-> Websocket server vs Client <-> LB <-> Websocker server ( preferred and used in real world)
+              https://chatgpt.com/c/69ae0285-26e0-8326-9e00-b46ff7c8309d  
 
-                  - Websocket through LB is possible through tunneling and is possible with HaProxy LB : http://tinyurl.com/yurdrom2 
-                  - NGINX LB also  supports WebSocket by allowing a tunnel to be set up between a client and a backend server. https://www.nginx.com/blog/websocket-nginx/ 
-                  - Even companies like Whatsapp goes with this approach ( tried practically)
+              Websocket tunneling is possible with all LBs - HaProxy, Nginx, AWS ALB, Cloudfare CDN : http://tinyurl.com/yurdrom2 
+              Also client usually connects to websocket via LB in real world examples ( Whatsapp) https://chatgpt.com/c/69ae0285-26e0-8326-9e00-b46ff7c8309d 
+                Client -> LB ( via TCP tunneling) -> Websocket server 
 
-                Option 1 : Client <-> LB <-> Websocker server
+                Option 1 : Client <-> LB <-> Websocker server ( preferred and used in real world like WhatsApp, Uber)
                   Pros
                   - helps in scaling -  creates new socket connections, update existing HTTP connections to socket.  
                   - more security due to LB's reverse proxy capabilities
                   - easy to configure Websocket with available LBs like HaProxy or Ngnix 
                   
                   Cons
-                  - connection limits (65K) per network IP interface. So LB becomes a bottleneck
+                  - LB becomes a bottleneck for connection limits. So for 64G RAM server, its 1-2 million connections ( 64GB / 64 KB per TCP connection). This bottleneck can be resolved with anycast and usually 1 million is enough. https://chatgpt.com/c/69b0c9f2-0884-8329-8175-6e9083048acd for more info. 
+
 
                 Option 2: Client <-> Websocket server implmented in https://dzone.com/articles/load-balancing-of-websocket-connections 
                   Pros 
@@ -2956,7 +2956,7 @@ Distributed best practices
                   Cons
                   - security due to man in middle attack. This can be avoided by establishing Auth first 
 
-                Option 3: connect with L3 LB 
+                Option 3: connect with L3 LB so thats its a direct pass through and TCP tunneling is not required
                   https://stackoverflow.com/questions/12526265/loadbalancing-web-sockets?rq=4 
 
           --------------------------------- Interesting open question on websocket ----------------------------
