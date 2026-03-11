@@ -2873,7 +2873,14 @@ Distributed best practices
           - Since each pod gets IP address, then won't it creates disruption if a pod dies. Example MySQL pod dies ? 
             - So pod is supported by "service" (may be kube-proxy) sitting in each pod. This concept which is similar to load balancer and IP address is assigned to a service instead of a pod. It also serves as a load balancer. 
             - ANOTHER GREAT ALTERNATIVE OPTION IS ISTIO SERVICE MESH ABSTRACTION
-          Similar video : https://www.youtube.com/watch?v=2vMEQ5zs1ko
+          - Istio avoid kube-proxy completely and provides valuable service mesh in kubernetes 
+            https://chatgpt.com/c/69b0780a-aea4-8325-8f24-6b98508f734a 
+            - Service Discovery
+            - Routing 
+            - Load Balancing 
+            - Resiliency ( Retries, Circuit Breaker, Rate Limiter)
+            - mTLS
+            - Observability ( optional )
 
 
    What is Istio ? 
