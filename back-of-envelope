@@ -2976,7 +2976,7 @@ Distributed best practices
       https://www.geeksforgeeks.org/difference-between-rest-api-and-web-socket-api/ 
       - Unlike REST, Websocket API does not require a new connection to be set up for each message to be sent between clients and servers. Once the connection is set up the messages can be sent and received continuously without any interruption.
       - WebSocket APIs are suitable for IoT Applications with low latency or high throughput requirements. 
-      - Websockets could be scaled on single server ~ 65K ports
+      - Websockets could be scaled on single server ~ 1 million connections for 16 vcpu, 64 G RAM 
       - Challenges with websocket are security, browser compactibility are complex to handle
     Difference between socket and a port
       https://www.geeksforgeeks.org/difference-between-socket-and-port/?ref=rp
