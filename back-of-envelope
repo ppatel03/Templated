@@ -2873,20 +2873,38 @@ Distributed best practices
           - Since each pod gets IP address, then won't it creates disruption if a pod dies. Example MySQL pod dies ? 
             - So pod is supported by "service" (may be kube-proxy) sitting in each pod. This concept which is similar to load balancer and IP address is assigned to a service instead of a pod. It also serves as a load balancer. 
             - ANOTHER GREAT ALTERNATIVE OPTION IS ISTIO SERVICE MESH ABSTRACTION
-          - Istio avoid kube-proxy completely and provides valuable service mesh in kubernetes 
+          - Istiod envoy proxy sidecar avoid kube-proxy completely and provides valuable service mesh in kubernetes 
             https://chatgpt.com/c/69b0780a-aea4-8325-8f24-6b98508f734a 
             - Service Discovery
             - Routing 
             - Load Balancing 
-            - Resiliency ( Retries, Circuit Breaker, Rate Limiter)
+            - Resiliency ( Retries, Circuit Breaker, Rate Limite, Traffic splitting during canary deployment)
             - mTLS
-            - Observability ( optional )
+            - Observability 
+              -  request level metrics monitoring like latency, request counts, error rate 
+              -  distributed tracing by automatically adding headers with x-request-id  
+              -  access logging 
+            Additional research in enovy proxy area to avoid sidecar overhead with eBPF Cilium 
 
 
    What is Istio ? 
+      It helps adding a service mesh layer 
+      Better version is here 
+         https://chatgpt.com/c/69b0780a-aea4-8325-8f24-6b98508f734a 
+            - Service Discovery
+            - Routing 
+            - Load Balancing 
+            - Resiliency ( Retries, Circuit Breaker, Rate Limiter, Traffic splitting during canary deployment)
+            - mTLS
+            - Observability 
+              -  request level metrics monitoring like latency, request counts, error rate 
+              -  distributed tracing by automatically adding headers with x-request-id  
+              -  access logging 
+            Additional research in envoy proxy area to avoid sidecar overhead with eBPF Cilium  
+
       https://www.youtube.com/watch?v=16fgzklcF7Y&t=197s&ab_channel=TechWorldwithNana 
       - First understand what is service mesh ? 
-        - with microservices, there are other problems on service-to-service communication, security, retry, metrics and tracing. So service mesh has a control plane which automatically deploys a sidecar proxy besides our main application (likely within the pod) and thus services can talk to each other through those proxies and the network layer for service to service communication along with control plane is called service mesh. This can sidecar proxy is responsible for performing all these tasks. This way developers can only focus on main business logic.
+        - with microservices, there are other problems on service-to-service communication, security, retry, metrics and tracing. So service mesh has a control plane which automatically deploys a sidecar proxy besides our main application (likely within the pod) and thus services can talk to each other through those proxies. This network layer for service to service communication along with control plane is called service mesh. This sidecar proxy is responsible for performing all these tasks. This way developers can only focus on main business logic.
         - It also helps in traffic splitting during Canary deployment. 
         - Service mesh is a paradigm (model) and Istio is one of its implementation. Istio uses open source proxy called Envoy proxy.  
       - Istio ? 
