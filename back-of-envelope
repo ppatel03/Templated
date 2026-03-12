@@ -3182,6 +3182,7 @@ Distributed best practices
       
       So then what are some solutions ? Pg 163 DDIA
        - always make read from master if its user's own info 
+       - have query specific quorum writes and reads
        - but what if there are many editable fields - maintain the mapping of the info most recently modified and based on that read from leader
        - have client store timestamp of most recent write
 
