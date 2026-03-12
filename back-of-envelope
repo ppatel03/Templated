@@ -2980,6 +2980,7 @@ Distributed best practices
       - Challenges with websocket are security, browser compactibility are complex to handle
     Difference between socket and a port
       https://www.geeksforgeeks.org/difference-between-socket-and-port/?ref=rp
+      Better explanation : https://chatgpt.com/g/g-p-698235e6d2ac8191b248a12be431269a-system/c/69ae0285-26e0-8326-9e00-b46ff7c8309d 
       Both Socket and Port are the terms used in Transport Layer. To be more precise, Socket is in session layer in OSI model. A port is a logical construct assigned to network processes so that they can be identified within the system. A socket is a combination of port and IP address. An incoming packet has a port number which is used to identify the process that needs to consume the packet.
     How to scale Websocket clusters
       https://bytebytego.com/courses/system-design-interview/nearby-friends
