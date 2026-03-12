@@ -3082,12 +3082,20 @@ Distributed best practices
          - supports rate limiting
          - supports caching
          - supports request grouping
-         - supports secure auth SSL. Also does optimizations with keep alive connection and cache to avoid SSL handshake - https://docs.nginx.com/nginx/admin-guide/security-controls/terminating-ssl-http/ 
+         - supports secure auth SSL. Also does optimizations with keep alive connection and cache to avoid SSL handshake (TLS termination) - https://docs.nginx.com/nginx/admin-guide/security-controls/terminating-ssl-http/ 
          Also a good read https://www.nginx.com/blog/http-keepalives-and-web-performance/
     - Nginx supports L7 (application level load balancer) and also L4 ? 
     - For modern websites, Nginx in form of reverse proxy is set up at multiple layers 
-        - first layer : edge server (caching or TLS connection)
-        - second layer : API gateway / load balancer
+        Refer https://chatgpt.com/c/69b25b64-ca7c-832e-a1d2-bb78d103fdaf for details 
+            Client
+              ↓
+            Edge Load Balancer (L4 / Anycast) - TLS termination, absorb DDOS, anycast routing 
+              ↓
+            API Gateway / Edge Proxy - API routing, Auth, Rate Limiting, logging, request transformation
+              ↓
+            Internal Load Balancer - load balancing within API service 
+              ↓
+            Service Instances
         However, many of them combine both as one ingress service in Nginx+
     Nginx vs HaProxy 
       https://blog.gitnux.com/comparison/haproxy-vs-nginx/#:~:text=Haproxy%20and%20Nginx%20are%20both,web%20server%20depending%20on%20configuration.
