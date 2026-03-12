@@ -2981,7 +2981,31 @@ Distributed best practices
     Difference between socket and a port
       https://www.geeksforgeeks.org/difference-between-socket-and-port/?ref=rp
       Better explanation : https://chatgpt.com/g/g-p-698235e6d2ac8191b248a12be431269a-system/c/69ae0285-26e0-8326-9e00-b46ff7c8309d 
-      Both Socket and Port are the terms used in Transport Layer. To be more precise, Socket is in session layer in OSI model. A port is a logical construct assigned to network processes so that they can be identified within the system. A socket is a combination of port and IP address. An incoming packet has a port number which is used to identify the process that needs to consume the packet.
+      Both Socket and Port are the terms used in Transport Layer. To be more precise, Socket is in session layer in OSI model. 
+      - A port is a logical id assigned to network processes so that they can be identified within the system. 
+        Example 
+          # Anonymous pipe in shell
+          ls | grep "file"
+
+          # Named pipe
+          mkfifo mypipe
+          echo "hello" > mypipe &  # writer
+          cat mypipe                # reader
+      - A pipe is a unidirectional communication channel between related processes (typically parent and child). Data flows in one direction: one process writes, the other reads.
+      - A socket is just kernel object representing a network connection - thinking of it as a network file. An incoming packet has a port number which is used to identify the process that needs to consume the packet.
+        Socket structure : 
+            Socket
+              ├── Local IP
+              ├── Local Port
+              ├── Remote IP
+              ├── Remote Port
+              ├── Protocol (TCP/UDP)
+              ├── Send buffer
+              ├── Receive buffer
+              └── State (ESTABLISHED, LISTENING, etc.)
+        Types:
+          Unix domain sockets — local only, file-based
+          Network sockets — TCP/UDP, can span networks
     How to scale Websocket clusters
       https://bytebytego.com/courses/system-design-interview/nearby-friends
         For the WebSocket cluster, it is not difficult to auto-scale based on usage. However, the WebSocket servers are stateful, so care must be taken when removing existing nodes. Before a node can be removed, all existing connections should be allowed to drain. To achieve that, we can mark a node as “draining” at the load balancer so that no new WebSocket connections will be routed to the draining server. Once all the existing connections are closed (or after a reasonably long wait), the server is then removed.
@@ -2993,14 +3017,27 @@ Distributed best practices
     SSE (Server side events) - used for server -> client connection 
       https://stackoverflow.com/questions/5195452/websockets-vs-server-sent-events-eventsource 
       - single direction from server -> client 
-      Ideal use cases of SSE:
-        Stock ticker streaming
-        twitter feed updating
-        Notifications to browser
-        Live commenting (but websockets are good for here)
-      SSE gotchas:
-        No binary support
-        Maximum open connections limit
+      How it works : 
+        1. Client 
+          GET /events
+          Accept: text/event-stream
+
+        2. Server responds 
+          Content-Type: text/event-stream
+
+        3. Then server continously sends : 
+            data: hello
+            data: new message
+            data: update
+        The connection stays open 
+      - Ideal use cases of SSE:
+          Stock ticker streaming
+          twitter feed updating
+          Notifications to browser
+          Live commenting (but websockets are good for here)
+      - SSE gotchas:
+          No binary support
+          Maximum open connections limit
       Advantages of Websockets over SSE:
           Real time, two directional communication.
           Native support in more browsers
