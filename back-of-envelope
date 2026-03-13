@@ -3249,7 +3249,7 @@ Distributed best practices
         locking is fine for writes but slows down read. So to avoid locking on read operations, we need to allow reading the last committed read.It ensures two things - 1. No dirty reads and 2. No dirty writes. This is also a default isolation level for MySQL and PostgreSQL.
         2. Snapshot isolation / Reapeatable Read: 
           With last committed read, there is still an issue of databasse concurrency issue. If user A has 500$ in account 1 and 2 and transfer 100$ from account 1 to account 2, balance is first updated and committed for account 1 and then on account 2. If before account 2 committed, values are read, then from it may appear that the user have only 900$ (account 1 is now 400$ but account 2 is still 500$).
-          This isolation solves this problem by taking the snapshot at particular version (MVCC say using timestamp) and allows reading only from that version. This is used in Oracle 11g, Google Cloud spanner and CockRoachDB.
+          This isolation solves this problem by taking the snapshot at particular version (MVCC say using timestamp) and allows reading only from that version. This is used in Oracle 11g, MySQL, Google Cloud spanner and CockRoachDB.
 
 
           Issue with snapshot isolation and also read committed isolation : The read committed and snapshot isolation levels we’ve discussed so far have been primarily about the guarantees of what a read-only transaction can see in the pres‐ ence of concurrent writes. We have mostly ignored the issue of two transactions writing concurrently. The best known of these is the lost update problem, illustrated in Figure 7-1 with the example of two concurrent counter increments.
