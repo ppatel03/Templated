@@ -4116,7 +4116,7 @@ Distributed systems today and Benchmarking on common systems
               - hardware type and architecture based on perfspect metrics like frontend or backend bound 
           
 
-            Solution for Autoscaling
+            Solution for Utilization efficiency - Autoscaling
               - Intially load testing is run for a week. After 3 days, it can halt if throughput and stopper metrics patterns are consistent.
               - Then it runs periodic load testing every 4 (config) hours to help determine throughput and stopper metrics 
                 - use throughput metrics to get total instructions at peak hour for the service at lowest granalarity - region level + machine type
@@ -4175,7 +4175,30 @@ Distributed systems today and Benchmarking on common systems
                   - Websocket server : using load balancer, add new connections during scale up, wait for existing connection to drain to scale down 
                   - Server having in memory-cache : periodic snapshot so that new server can have the cache to help with scale up, remove server if its not a server with primary cache. This would need external shard manager like Orion for Database server.
 
-          
+            Solution for Utilization Efficiency : Defragmentation using multi-level scheduler 
+              https://chatgpt.com/c/69b53d2a-a4a4-8325-aabe-3f6674e95911 
+                                Job Queue
+                                    │
+                                    ▼
+                            Queue Ordering (priority)
+                                    │
+                                    ▼
+                            Fairness Manager
+                          (quota / DRF enforcement)
+                                    │
+                                    ▼
+                            Feasibility Check
+                            (gang scheduling)
+                                    │
+                                    ▼
+                              MIP Optimizer
+                          (placement optimization)
+                                    │
+                                    ▼
+                            Node Assignment
+                                    │
+                                    ▼
+                                Preemption
               
 
       
