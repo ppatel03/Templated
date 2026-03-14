@@ -3366,7 +3366,26 @@ Distributed best practices
     Consistency and Concensus with distributed databases  Pg 321
 
     What is Linearizability vs Serializability
-        - Linearizability is the recency guarantee while Serializability is the ordering guarantee
+    - https://chatgpt.com/c/68ccd978-c4d0-832f-ab97-932e46492b81 
+        - Linearizability is the recency + real time ordering guarantee while Serializability is the "any" ordering guarantee
+        - Serializability : A schedule (interleaving of operations from different transactions) is serializable if its effect is the same as if the transactions were executed one after another (in some order).
+            Example:
+
+              T1: Read(X), Write(X)
+
+              T2: Read(Y), Write(Y)
+
+              Even if T1 and T2 interleave, as long as the result is equivalent to either T1 → T2 or T2 → T1, it is serializable.
+        - Linearizability : An operation appears to take effect instantaneously at some point between its invocation and its response.It is stronger than serializability, because it preserves real-time ordering of operations.
+          Example:
+
+              Suppose client A writes X=1 at time t1 and gets acknowledgment.
+
+              Later, client B reads X at time t2 > t1.
+
+              Linearizability requires B must see X=1.
+
+              Serializability could still allow B to see the old value if the transactions "reorder."
          
 
   How to design ranking system based on multile criteria (used in multiple designs like google ranking, FB ranking)
