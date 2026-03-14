@@ -3888,6 +3888,8 @@ Distributed systems today and Benchmarking on common systems
         Event-Based Profiling:
           Configure the profiler to start only when specific conditions are met (e.g., high CPU utilization or memory pressure).
           Example: Use CloudWatch Alarms to trigger profiling when CPU usage exceeds 80%.
+        Adhoc Profiling ( at Pinterest) : 
+          short period of deep profiling configs like running perfspect, pmu metrics - cache misses, frontend stall, backend stall
        
     Performance monitoring needs to be done at different levels 
       Example of Meta stack - https://atscaleconference.com/systemscale-ai-observability/
@@ -3922,6 +3924,8 @@ Distributed systems today and Benchmarking on common systems
           GPUSNOOP
             Gpusnoop is a BPF-based profiler suite that Strobelight supports. It can hook into a variety of interesting GPU events such as cuda kernel launches, cuda sync events, and cuda memory events. It also supports profiling PyTorch memory events.
         python profiler
+          pyperf - ebpf profiler 
+          pyspy - application level profiler 
           pstats / line profiler - not good for production though
           event based vs statistical profiler 
             event based 
@@ -3929,12 +3933,10 @@ Distributed systems today and Benchmarking on common systems
             statistical 
               - probe(search) call stack periodically. Example vmprof
         java profiler (https://digma.ai/9-best-java-profilers-to-use-in-2024/#types-of-java-profilers)
-          - JProfiler, IntelliJ Profiler
+          - Async profiler, JProfiler, IntelliJ Profiler
             
 
-      EXAMPLE FEATURES
-        - AUTO-PROFILING AND ON-DEMAND PROFILING  
-        
+       
 
     BPF(Berkely packet filtering) profiling libraries to check performance bottleneck 
       nice video - https://www.youtube.com/watch?v=bGAVrtb_tFs&ab_channel=eBPF%26CiliumCommunity
@@ -3978,6 +3980,11 @@ Distributed systems today and Benchmarking on common systems
           - archive old logs to disk using typical linux fsync command (Forces all in-memory data of a file, along with its metadata)
           - avoid string formatting in logs if that log level is not even enabled 
       - Software efficiency
+        - For java 
+          - Regex optimizations on Pattern compile
+          - Compression level algo selection and tuning 
+          - Serde ( with simd json)
+          - Video compression algo tuning ( like H264 codec)
         - For horizontal software written in C, using Folly libraries rather than traditional ones (in memory json manipulation or string-formatting)
             - folly::small_vector over std::vector: Ideal for small collections, reducing heap allocations and improving cache locality.
             - folly::F14 Hash Tables: Highly efficient hash table implementations with superior performance compared to standard std::unordered_map.
