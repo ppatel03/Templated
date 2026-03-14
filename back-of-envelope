@@ -3424,6 +3424,8 @@ Distributed best practices
     https://www.youtube.com/watch?v=4KHiSt0oLJ0&ab_channel=Fireship
     by default, browser does not allow requests to another domain on your website. To allow this, you need to send "Access-Control-Allow-Origin" header in the response.
 
+  Why there is restrictions in # of ports on the host it all it helps is to identify process on network ?
+    Hosts have a hard limit of 65,535 TCP/UDP ports because the port number is defined as a 16-bit integer in the packet header of TCP/IP networking protocols. 
   
 
 =========================================================================================================================
