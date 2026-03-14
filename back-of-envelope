@@ -3997,6 +3997,7 @@ Distributed systems today and Benchmarking on common systems
               - archive old logs to disk using typical linux fsync command (Forces all in-memory data of a file, along with its metadata)
               - avoid string formatting in logs if that log level is not even enabled  
         - ML ranking : vector optimizations with sparse matrix. 
+        - ML serving : use batching, move from FP32 to FP16 and even INT8 tracking accuracy impact
         - Implementation of Async IO
         - using BPF (say biosnoop command )
         - Case study : Example of unexplained spikes latency and cost in EKS/ECS cluster 
@@ -4022,7 +4023,8 @@ Distributed systems today and Benchmarking on common systems
       - HW efficiency
         - replace new hardware based on bottlneck resource
         - avoid double occupancy
-        - degrade efficiency to solve unsellables 
+        - degrade efficiency to solve unsellables problem
+        - hardware type and architecture based on perfspect metrics like frontend or backend bound 
 
       - ML Serving Infra and Efficiency
         https://www.youtube.com/watch?v=s-eVxzHMgI0 
