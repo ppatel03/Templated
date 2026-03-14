@@ -4177,28 +4177,66 @@ Distributed systems today and Benchmarking on common systems
 
             Solution for Utilization Efficiency : Defragmentation using multi-level scheduler 
               https://chatgpt.com/c/69b53d2a-a4a4-8325-aabe-3f6674e95911 
-                                Job Queue
-                                    │
-                                    ▼
-                            Queue Ordering (priority)
-                                    │
-                                    ▼
-                            Fairness Manager
-                          (quota / DRF enforcement)
-                                    │
-                                    ▼
-                            Feasibility Check
-                            (gang scheduling)
-                                    │
-                                    ▼
-                              MIP Optimizer
-                          (placement optimization)
-                                    │
-                                    ▼
-                            Node Assignment
-                                    │
-                                    ▼
-                                Preemption
+                                                    Job Queue
+                                                      │
+                                                      ▼
+                                              Queue Ordering
+                                            (priority + DRF)
+                                                      │
+                                                      ▼
+                                              Quota Enforcement
+                                                      │
+                                                      ▼
+                                              Gang Feasibility
+                                                      │
+                                                      ▼
+                                              Preemption Planner ( to evict pods)
+                                                      │
+                                                      ▼
+                                              Heuristic Placement (using binpacking scheduler weighted algo)
+                                                      │
+                                                      ▼
+                                                  MIP Solver ( minimize cost and fragementation keeping constraints on WNO, system overhead, workload level overhead)
+                                                      │
+                                                      ▼
+                                                Node Binding
+                                                      │
+                                                      ▼
+                                              Async Defragmenter
+
+              - To speed up execution, each plugin run independently 
+                  QUEUE STAGE
+                    PriorityPlugin
+                    DRFPlugin
+
+                  FILTER STAGE
+                    QuotaPlugin
+                    GangPlugin
+
+                  PREEMPTION STAGE
+                    PreemptionPlanner
+
+                  OPTIMIZATION STAGE
+                    MIPSolver
+
+                  BIND STAGE
+                    NodeBinder
+              
+              - Architecture : jobs processed in parallel for speed 
+                  Scheduler Core
+                      │
+                      ├── Worker Thread 1
+                      ├── Worker Thread 2
+                      ├── Worker Thread 3
+                
+
+              - Throughput numbers 
+                | System     | Scheduling throughput |
+                | ---------- | --------------------- |
+                | Borg       | 10k tasks/sec         |
+                | Kubernetes | ~1000 pods/sec        |
+                | Ray        | ~1M tasks/sec         |
+
               
 
       
