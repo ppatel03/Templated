@@ -4013,6 +4013,7 @@ Distributed systems today and Benchmarking on common systems
       - Utilization efficiency 
         - Autoscaling using capacity modelling (throughput and stopper metrics)
         - unused host 
+        - Defragmentation using MIP Solver based scheduler 
         - Kubernetes right sizing using AWS Karpenter - https://www.youtube.com/watch?v=FIBc8GkjFU0&ab_channel=ContainersfromtheCouch 
           - https://karpenter.sh/ 
           - Say if a new pod is needed say just needed instance size i3en.xl, 
@@ -4089,8 +4090,8 @@ Distributed systems today and Benchmarking on common systems
                 - Double occupancy (DO) issue during host replacement, where old and new hosts serve traffic simultaneously.
                 - Autoscaling Stateful services poses reliability and performance challenges.
                   - Database server : can be solved with external shard manager like Orion. So load testing + capacity automation would work but only replicas should be impacted without touching primary.
-                  - Websocket server : add new connections during scale up, wait for existing connection to drain to scale down 
-                  - Server having in memory-cache : periodic snapshot so that new server can have the cache to help with scale up, remove server if its not a server with primary cache
+                  - Websocket server : using load balancer, add new connections during scale up, wait for existing connection to drain to scale down 
+                  - Server having in memory-cache : periodic snapshot so that new server can have the cache to help with scale up, remove server if its not a server with primary cache. This would need external shard manager like Orion for Database server. 
         - Amazon
           - Demand efficiency ( all end customers)
             - add eBPF for cloud cost optimizer
@@ -4109,9 +4110,10 @@ Distributed systems today and Benchmarking on common systems
                 - case study of eBPF observability
                   - https://docs.google.com/document/d/1c_B2-Jcz4tlmtyoOMsnX5hZzlMtP4LHJPYW6GZPJ8bY/edit?tab=t.0
             - Utilization ( no problems on autoscaling )
-              - defragmentation using Live migration
+              - defragmentation using Live migration and MIP Solver based Scheduler 
             - HW efficiency
               - degrade efficiency by smartly select high risk hosts based on temperature, age, power supply, DCO bandwidth and capacity to evacuate 
+              - hardware type and architecture based on perfspect metrics like frontend or backend bound 
           
 
             Solution for Autoscaling
@@ -4168,9 +4170,10 @@ Distributed systems today and Benchmarking on common systems
                     - similar strategy but to save costs further it tries to consume capacity from released flexible pool of machines rather than service selected machine type 
 
                 What about autoscaling on stateful services ? 
-                  - this is hard and manual often and needs to be carefully done if automation 
-                    - region + machine type granularity helps 
-                    - make sure you deroute the traffic very slowly
+                - this is hard and manual often and needs to be carefully done if automation but thumb rule always scale up/down on replicas  
+                  - Database server : can be solved with external shard manager like Orion. So load testing + capacity automation would work but only replicas should be impacted without touching primary.
+                  - Websocket server : using load balancer, add new connections during scale up, wait for existing connection to drain to scale down 
+                  - Server having in memory-cache : periodic snapshot so that new server can have the cache to help with scale up, remove server if its not a server with primary cache. This would need external shard manager like Orion for Database server.
 
           
               
