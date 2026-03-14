@@ -3572,23 +3572,58 @@ Distributed systems today and Benchmarking on common systems
         Next video to watch about embedding model - https://www.youtube.com/watch?v=lh9CNRDqKBk&t=1630s&ab_channel=MLOps.community 
       These days preference is more on building online recommendation system rather than offline since offline / batch recommendation stops us from building real-time searches and esp. on viral videos 
 
+    
 
-        Client --> LB ---> Recommendation service ( fan - out because of realtime) ----> Retrieval service (retrieve 1K using embedding model) 
-                            |              |                                                (also handles blocked items using bloom filter) 
-                            |              |
-                            |              |--------------------------------------------> Ranking service (using weights and merge sort )
-                            |                                                                 |
-                            |                                                                 |
-                            |                                                                 | (update the weights)
-                            |-------------> User Activity Log parser ----> Batch ML Job ------
+      1) High level Training + Serving Architecture 
+      - https://chatgpt.com/c/69b31fa3-3160-8332-b19b-8623ec404f98 
+          User Events
+              │
+          Kafka
+              │
+          Stream Processing 
+              │
+          Data Lake (like S3)
+              │
+          Feature Pipeline (Flink, Spark on Airflow)
+              │
+          Feature Store ( S3, Snowflake for offline store for training offline and Redis, Cassandra, DynamoDB for serving online  )
+              │
+          Kubeflow Pipeline
+              │
+          Distributed Training (Ray on Kuberay)
+              │
+          Model Registry
+              │
+          Online Model Serving
+              │
+          Monitoring
 
 
-      - online recommendation needs retrieval (nearest neighbours) and ranking (rank those neighbours)
+    2) Online Model Serving architecture ( used in Netflix/Meta)
+       https://chatgpt.com/c/69b31fa3-3160-8332-b19b-8623ec404f98
+        Client
+          │
+        API Gateway
+          │
+        Recommendation Service
+          │
+        Candidate Retrieval Service calls vector DB. This service also can handle blocked items using bloom filter.
+          │
+        Feature Store Lookup
+          │
+        Ranking Model
+          │
+        Response
+
+
+
+
+      - online recommendation needs retrieval (nearest neighbours), feature extraction and ranking (rank those neighbours)
         - retrieval using embedding model (embedding is ML-friendly version of original input. learn more in first 8 mins video https://www.youtube.com/watch?v=yfHHvmaMkcA&ab_channel=freeCodeCamp.org )
           - But how fetch 1K nearest embeddings amongst billions of recommendations ? 
             option 1. using geo spatial index ( geaohash for map is 2-dimensional but here is multi-dimensional). Its complex though.
             option 2. using the cache index for each embeddings, here are nearest neighbours. Demands space.
-            option 3. using vector database which helps groups embeddings into buckets so your retrieval is faster : https://www.youtube.com/watch?v=72XgD322wZ8&ab_channel=codebasics 
+            option 3.(Preferred) using vector database which helps groups embeddings into skip list structure so your retrieval is faster : https://www.youtube.com/watch?v=72XgD322wZ8&ab_channel=codebasics 
 
         - ranking using distributed ranking service 
           - But how to rank these huge request with each having 1K neighbours ? 
@@ -3598,7 +3633,7 @@ Distributed systems today and Benchmarking on common systems
           - Embedding model -> Item data into embedding model -> get 100/1000 nearest neighbouts 
       - place the ranking algo on distributed rabking services
           - Add features to candidates -> rank top k candidates 
-      Meta used Multiray platforms for embedding - https://ai.meta.com/blog/multiray-large-scale-AI-models/ 
+      Meta used Multiray platforms ( similar to kuberay) for embedding - https://ai.meta.com/blog/multiray-large-scale-AI-models/ 
 
       Practical of retrieval using embedding : https://www.youtube.com/watch?v=ySus5ZS0b94&ab_channel=AdrianTwarog 
 
