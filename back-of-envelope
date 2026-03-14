@@ -4083,10 +4083,14 @@ Distributed systems today and Benchmarking on common systems
           - Utilization efficiency
             - load testing + capacity automation due to 
                 - Lack of clarity on service bottleneck metrics
-                - Uncertainty regarding the appropriate capacity for Disaster Recovery Buffer (DR) and Growth Buffer
-                - Double occupancy (DO) issue during host replacement, where old and new hosts serve traffic simultaneously.
+                - Sharded services by endpoints 
                 - Regional Fluidity (RF) issue caused due to uneven capacity distribution across regions.
+                - Uncertainty regarding the appropriate capacity for Disaster Recovery Buffer (DR) and Growth Buffer and Spike buffer
+                - Double occupancy (DO) issue during host replacement, where old and new hosts serve traffic simultaneously.
                 - Autoscaling Stateful services poses reliability and performance challenges.
+                  - Database server : can be solved with external shard manager like Orion. So load testing + capacity automation would work but only replicas should be impacted without touching primary.
+                  - Websocket server : add new connections during scale up, wait for existing connection to drain to scale down 
+                  - Server having in memory-cache : periodic snapshot so that new server can have the cache to help with scale up, remove server if its not a server with primary cache
         - Amazon
           - Demand efficiency ( all end customers)
             - add eBPF for cloud cost optimizer
