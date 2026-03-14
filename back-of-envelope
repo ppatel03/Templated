@@ -4300,8 +4300,8 @@ Distributed systems today and Benchmarking on common systems
 
         Memcached doesn't support transactions, although its operations are atomic.
         Redis provides out-of-the-box support for transactions to execute commands. We can start the transaction using the MULTI command. Then, we can use the EXEC command for the execution of the following subsequent commands. Finally, Redis provides the WATCH command for the conditional execution of the transaction. 
-        One of the reason why Redis is a good choice for applications which need atomic transactions and serializable isolation - Rate 
-        You can also have LUA script support in Redis which executes atomically
+        One of the reason why Redis is a good choice for applications which need atomic transactions and serializable isolation - Rate Limiter
+        In Rate Limiter, You can also have LUA script support in Redis which executes atomically
 
         Memcached doesn't support publish/subscribe messaging out-of-the-box.
         Redis, on the other hand, provides functionality to publish and subscribe to messages using pub/sub message queues.
@@ -4317,10 +4317,7 @@ Distributed systems today and Benchmarking on common systems
 
   SQL DB and benchmarking - Relational
     1. MySQL benchmarking
-          48 cores, single node
-          4 x # of cores ~ 200
-            200 reads ~ 200 us
-            200 writes ~ 1 ms (writes 4x slower)
+         16vcpu, 64G mem, 2 x 2.5 TB disk - i3en.2xlarge
           load test
             10K reads ~ 10-20 ms 
             10K writes ~ 100 ms (writes 4x slower)
@@ -4345,7 +4342,7 @@ Distributed systems today and Benchmarking on common systems
             AWS limit : 64 TB storage and 24 TB of RAM
 
           Some facts
-          - MySQL client <-> server is socket based connection. Check why ?
+          - MySQL client <-> server is socket based connection. Check why ? well even HTTP use sockets underhood but closes it. In MySQL, it may not be closing it
           - Max connection limit for MySQL = 100 K
           - per connection -> one user thread
           - size of user thread depends on THD connection data structure which is per connection ~ 10 MB 
@@ -4414,7 +4411,7 @@ Distributed systems today and Benchmarking on common systems
         Benchmark
         - Single row reads and writes
           https://www.cockroachlabs.com/docs/v22.2/performance.html
-          across availability zones - 3 node cluster, c5d.9xlarge (36v CPUs, 72 G RAM)
+          across availability zones - 3 node cluster, i3en.2xlarge (16v CPUs, 64 G RAM)
             100K-200K QPS
             single-row reads in 50-100 ms and processes 
             single-row writes in 50-100 ms
@@ -4426,11 +4423,11 @@ Distributed systems today and Benchmarking on common systems
 
 
     NoSQL value DB and benchmarking
-        1. Timeseries : OpenTSDB / InfluxDB
+        1. Timeseries : OpenTSDB / InfluxDB / Prometheous 
 
              Why Time-series DB and not other key-values like Cassandra, MongoDB ???? 
-                - in built support for time-based queries example using Time-structured merge tree
-                - in built support for sampling through retention config
+                - in built support for time-based queries example using Time-structured merge tree where SSTable is simply replaced by time blocks of 1 hour.
+                - in built support for downsampling and retention config
 
                 Proof : Thus performance is 100x faster
                   https://www.influxdata.com/blog/influxdb-vs-cassandra-time-series/ 
@@ -4465,7 +4462,7 @@ Distributed systems today and Benchmarking on common systems
 
 
             Influx DB benchmarking from bytebytego : 
-              8 cores and 32GB RAM can handle over 250,000 writes per second, greater than 1 M series of storage, 25 burst read QPS 
+              16 cores and 64GB RAM can handle over 250k-500k writes per second, greater than 1 M series of storage, 25 burst read QPS 
               (https://bytebytego.com/courses/system-design-interview/metrics-monitoring-and-alerting-system)
 
               Performance optimization
@@ -4579,10 +4576,11 @@ Distributed systems today and Benchmarking on common systems
             So Every global secondary index must have a partition key, and can have an optional sort key. The index key schema can be different from the base table schema. 
 
             DynamoDB splits data across multiple nodes using consistent hashing.
+            DynamoDB is leaderless replication. 
 
-            uses quorum consistency (type of strong consistency)
+            Consistency is eventual by default but has options for quorum consistency (type of strong consistency)
             uses read-repair and anti-entropy
-            supports serializable transactions
+            also supports serializable transactions using TransactWriteItems and TransactGetItems
 
 
         7. S3
