@@ -4267,7 +4267,7 @@ Distributed systems today and Benchmarking on common systems
                               - Output: optimal weights for solver objective:
                                   minimize:
                                     w1 * fragmentation
-                                    + w2 * migration cost
+                                    + w2 * instance cost
                                     + w3 * preemption rate
                                     + w4 * scheduling latency
                                 This allows the scheduler to adapt automatically to workload changes.
