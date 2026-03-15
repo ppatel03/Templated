@@ -4590,7 +4590,7 @@ Distributed systems today and Benchmarking on common systems
             So Every global secondary index must have a partition key, and can have an optional sort key. The index key schema can be different from the base table schema. 
 
             DynamoDB splits data across multiple nodes using consistent hashing.
-            DynamoDB is leaderless replication. 
+            DynamoDB new version is now "leader" replication ( previously it was leaderless). 
 
             Consistency is eventual by default but has options for quorum consistency (type of strong consistency)
             uses read-repair and anti-entropy
