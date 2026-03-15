@@ -4264,7 +4264,7 @@ Distributed systems today and Benchmarking on common systems
                                                                   │
                                                                   ▼
                                                           Queue Ordering
-                                                        (priority + DRF)
+                                                              (priority)
                                                                   │
                                                                   ▼
                                                           Quota Enforcement
@@ -4324,7 +4324,6 @@ Distributed systems today and Benchmarking on common systems
                             - To speed up execution, each plugin run independently 
                                 QUEUE STAGE
                                   PriorityPlugin
-                                  DRFPlugin
 
                                 FILTER STAGE
                                   QuotaPlugin
