@@ -4008,9 +4008,20 @@ Distributed systems today and Benchmarking on common systems
             2. Metrics pointed to general delays in network communication, but no specific service or node showed clear patterns.
             3. The system handled thousands of requests per second, so capturing detailed traces was costly and impractical.
           - Root causes : 
-            1. Application Level: Blocking I/O operations in Java applications limited scalability and throughput, exhausting thread pools under high load.
-            2. Network Level: TCP retransmissions, kube-proxy inefficiencies, and misconfigured retry mechanisms compounded latency issues.
-            3. Infrastructure Level: Saturated socket buffers and inefficient service routing worsened the bottleneck.
+            1. Application Level: 
+              Cause : Blocking I/O operations in Java applications limited scalability and throughput, exhausting thread pools under high load. Detection : Tools like offcputime-bpfcc traced threads in IO_WAIT states, exposing time spent in blocking I/O. 
+              Fix :  move to async io
+            2. Network Level:
+               Cause : TCP retransmissions, kube-proxy inefficiencies, and misconfigured retry mechanisms compounded latency issues. 
+               Detection : Tools like tcpconnect and tcptracer-bpfcc identified packet retransmissions and socket buffer saturation issues.
+               Fix :
+                -  migrate away from kube-proxy which uses iptables redirection+application process to ebpf basec Cilium for kernel level discovery and load balancing. This is also active area of opportunity for Envoy. 
+                - use circuit breaker to reduce network load 
+
+            3. Infrastructure Level: 
+                Cause : Saturated socket buffers and inefficient service routing worsened the bottleneck.
+                Detection : Tools like sockstat-bpfcc monitored socket buffer usage and identified nodes with saturation issues.
+                Fix : Increased buffer limits on high-traffic nodes using AWS Systems Manager automation scripts.
           - Details : https://docs.google.com/document/d/1c_B2-Jcz4tlmtyoOMsnX5hZzlMtP4LHJPYW6GZPJ8bY/edit?tab=t.0
       - Utilization efficiency 
         - Autoscaling using capacity modelling (throughput and stopper metrics)
@@ -4031,6 +4042,7 @@ Distributed systems today and Benchmarking on common systems
 
       - ML Serving Infra and Efficiency
         https://www.youtube.com/watch?v=s-eVxzHMgI0 
+          - vector optimization using sparse matrix multiplication
           - high throughput with batching : saves majority of cost ( example, 70% savings from 5ms for 1 req vs 20ms for 32 reqs) but make sure there is 5-10ms window for latency sensitive workloads and 50 ms for thoughput-optimized workloads 
           - 50% reduction in gpus with FP32 to FP16 (or preferred BF16 which does not underflow since it has same 8 exponential bits) precision 
           - 75% reduction in gpus with FP32 to INT8 but accuracy needs to be validated 
@@ -4075,15 +4087,15 @@ Distributed systems today and Benchmarking on common systems
       Example of performance wins 
         - Hulu
           - Convert Java microservices to Go 
-        - Meta 
-          - Demand efficiency 
+        - Meta : 80M$/yr 
+          - Demand efficiency : 10M$ 
             - through memoization
             - promise cache
             - long tail but impactful - unused GKs, unused DBs and their jobs, infrequent query 
-          - Software efficiency 
+          - Software efficiency : 10M$
             - using folly libraries 
             - using BPF insights
-          - Utilization efficiency
+          - Utilization efficiency : 60M$
             - load testing + capacity automation due to 
                 - Lack of clarity on service bottleneck metrics
                 - Sharded services by endpoints 
@@ -4091,9 +4103,58 @@ Distributed systems today and Benchmarking on common systems
                 - Uncertainty regarding the appropriate capacity for Disaster Recovery Buffer (DR) and Growth Buffer and Spike buffer
                 - Double occupancy (DO) issue during host replacement, where old and new hosts serve traffic simultaneously.
                 - Autoscaling Stateful services poses reliability and performance challenges.
-                  - Database server : can be solved with external shard manager like Orion. So load testing + capacity automation would work but only replicas should be impacted without touching primary.
-                  - Websocket server : using load balancer, add new connections during scale up, wait for existing connection to drain to scale down 
-                  - Server having in memory-cache : periodic snapshot so that new server can have the cache to help with scale up, remove server if its not a server with primary cache. This would need external shard manager like Orion for Database server. 
+                 
+                Solution for Utilization efficiency - Autoscaling
+                    - Offline 
+                      - Intially load testing is run for a week. After 3 days, it can halt if throughput and stopper metrics patterns are consistent.
+                      - Then it runs periodic load testing every 4 (config due to traffic shift) hours to help determine throughput and stopper metrics 
+                      - use throughput metrics to get total instructions at peak hour for the service at lowest granalarity - region level + machine type
+                      - calculate throughput for DR bufer, organic growth and spike buffer from throughput metric 
+                      - Feeds these inputs into ML Serving stack to account for seasonaliy spikes, deployment to get the estimate of # of machines needed
+                      - submit this data to autoscaling job
+                    - Online : 
+                      - Once throughput metric and its related to # of machines is known, perform online analysis triggered on events like traffic pattern change, resource saturation, bottleneck resource shift etc. This calls our ML serving model to help scale # of machines at region + az granularity
+                      - submit this data to autoscaling job
+                    - How autoscaling is done ? 
+                        - tags the selected hosts on every region at machine type 
+                        - tags the service router to gradually route the traffic to those selected hosts gradually based on configurable load
+                        - marks the selected hosts to do advanced profiling 
+                        - waits for machine to drain 
+                          - health check
+                          - error rate
+                          - response time for online services. 
+
+                    - What if load testing results (throughput + stopper) does not show consistent patterns throughout the week. This was 45% of the case ? 
+                        This usually happens with different demand sources. One thing observed was with different demand sources, throughput metric was consistent but stopper metrics could change. Example, call from FB feed to ranking platform is CPU bound but from Insta feed to ranking platform is Mem bound.
+                        SOLUTION : 
+                        
+                        1.  fewer demand sources 
+                            - perform sharding of services by demand sources after load testing 
+                            - Set quotas accordingly. ( say max throughput is 15 ins, then FB can max have 5 ins and insta can have max 10 ins )
+                            - for hard limit quotas, inform the teams to use promise cache
+                            Pros : great utilization 
+                            Cons : cubersome to manage for 100+ demand sources especially shared endpoints like WWW
+
+                        2. multiple 100+ demand sources : 
+                            - This is hard but performing below steps helped 
+                              1. group demand sources based on throughput and stopper metrics
+                              2. integrate ML to undestand anamolies on existing groups and perform re-group using clustering algorithm
+                            Pros : easier to manage
+                            Cons : too much resource overhead on load testing because of time-based and grouping
+                
+                              
+                    - What if Demand sources limit/quotas not set (unbounded)
+                        - For viral content, we use promise cache to avoid multiple requests for same resource.
+                        - Service level rate limiter with spike buffer
+
+
+                    - What about autoscaling on stateful services ? 
+                      - this is hard and manual often and needs to be carefully done if automation but thumb rule always scale up/down on replicas  
+                          - Database server : can be solved with external shard manager like Orion. So load testing + capacity automation would work but only replicas should be impacted without touching primary.
+                          - Websocket server : using load balancer, add new connections during scale up, wait for existing connection to drain to scale down 
+                          - Server having in memory-cache : periodic snapshot so that new server can have the cache to help with scale up, remove server if its not a server with primary cache. This would need external shard manager like Orion for Database server.
+
+
         - Amazon
           - Demand efficiency ( all end customers)
             - add eBPF for cloud cost optimizer
@@ -4112,132 +4173,138 @@ Distributed systems today and Benchmarking on common systems
                 - case study of eBPF observability
                   - https://docs.google.com/document/d/1c_B2-Jcz4tlmtyoOMsnX5hZzlMtP4LHJPYW6GZPJ8bY/edit?tab=t.0
             - Utilization ( no problems on autoscaling )
-              - defragmentation using Live migration and MIP Solver based Scheduler 
+              - defragmentation using Live migration 
             - HW efficiency
               - degrade efficiency by smartly select high risk hosts based on temperature, age, power supply, DCO bandwidth and capacity to evacuate 
-              - hardware type and architecture based on perfspect metrics like frontend or backend bound 
           
 
-            Solution for Utilization efficiency - Autoscaling
-              - Intially load testing is run for a week. After 3 days, it can halt if throughput and stopper metrics patterns are consistent.
-              - Then it runs periodic load testing every 4 (config) hours to help determine throughput and stopper metrics 
-                - use throughput metrics to get total instructions at peak hour for the service at lowest granalarity - region level + machine type
-                - calculate throughput for DR bufer, organic growth and spike buffer from throughput metric 
-                - get the estimate of # of machines needed
-                - submit this data to autoscaling job 
-                How load testing is done ? 
-                Initially, it runs for a week (configurable) or ends early if peek hour or steady traffic is determined. After that it runs every 4 hours and submit its stats to autoscaling.
-                  - runs every 4 hours by default but runs more frequently if the stopper metrics vary 
-                  - tags the selected hosts on every region at machine type 
-                  - tags the service router to gradually route the traffic to those selected hosts gradually based on configurable load
-                  - marks the selected hosts to do advanced profiling 
-                  - waits for machine to drain 
-                    - health check
-                    - error rate
-                    - response time for online services. 
+            
+          Pinterest 
+            - Problem : Pinterest Infra cost is major contributution towards margin and goal was to save 100M$ every year 
+              - Software efficiency : 50M$
+                - Having profiling tool set up ( both agent and backend infra) onboarded using Intel's gProfiler which is open source, essemble profile of 8+ different languages, has intel perfspect and also have active partnership with Intel
+                  - Bad patterns : 
+                    - Regex optimization by static initialization of Pattern.compile
+                  - Research heavy : 
+                    - Compression level tuning for ZStd ( high compression) vs Zlibng ( balanced) vs LZ64 ( low compression so fast but impacts network throughput)
+                    - Serde with simd json library 
+                - Using Perfspect :  Detected Frontend stall on gson library 
+                  - Reason : branch misprediction and dynamic reflection ( different data types)
+                  - Fix : Replace with SIMD-optimized JSON parsing
+                - Using Perfspect : Detected Backend stalls 
+                  - Reason : cache-misses, pointer heavy data structures, large object allocations 
+                  - Fix : 
+                - ML Serving Infra and Efficiency
+                  https://www.youtube.com/watch?v=s-eVxzHMgI0 
+                  - vector optimization using sparse matrix multiplication
+                  - high throughput with batching : saves majority of cost ( example, 70% savings from 5ms for 1 req vs 20ms for 32 reqs) but make sure there is 5-10ms window for latency sensitive workloads and 50 ms for thoughput-optimized workloads 
+                  - 50% reduction in gpus with FP32 to FP16 (or preferred BF16 which does not underflow since it has same 8 exponential bits) precision 
+                  - 75% reduction in gpus with FP32 to INT8 but accuracy needs to be validated 
+              - Hardware efficiency : 50M$
+                  - Moving to P family for better cpu->gpu bandwidth by offering NVLink support which improved our GPU utilization : 10M$
+                  - Moving to EFA reduced 60% GPU hours : 10M$
+                  - Moving to I, M and P : Load testing revealed that improving utilization greater than 70% impacted throughput and later found that most % of fleet are backend bound based on Perfspect. This motivated to move towards m family due to better memory bandwidth and also 50% cheaper. So we purchased backdated ISPs yielding 30M$
+                  - Moving to consolidated metal sizes : Our anlaysis binpacking on large 24xl metal sizes can further can save the cost since 30% fragmentation on multiple smaller size instance is expensive than 30% fragmentation on large size instances. Metal gives direct access to cores and moving sidecars to daemonset in kubernetes can further reduce the cost.
 
-                What if load testing results (throughput + stopper) does not show consistent patterns throughout the week. This was 45% of the case ? 
-                  This usually happens with different demand sources. One thing observed was with different demand sources, throughput metric was consistent but stopper metrics could change. Example, call from FB feed to ranking platform is CPU bound but from Insta feed to ranking platform is Mem bound.
-                  SOLUTION : 
-                  
-                  1.  fewer demand sources 
-                      - perform sharding of services by demand sources after load testing 
-                      - Set quotas accordingly. ( say max throughput is 15 ins, then FB can max have 5 ins and insta can have max 10 ins )
-                      - for hard limit quotas, inform the teams to use promise cache
-                      Pros : great utilization 
-                      Cons : cubersome to manage for 100+ demand sources especially shared endpoints like WWW
+              - Utilization efficiency : 20M$
+                  - Most workloads were able to meet 70% utilization for their bottleneck metrics. So little opportunity here 
+                  - Fragmnetation opportunity : 20M$ 
+                     - Scheduler optimization to reduce defragmentation for batch, ML and online workloads 
+                      - Solution for Utilization Efficiency : Defragmentation using multi-level scheduler 
+                          https://chatgpt.com/c/69b53d2a-a4a4-8325-aabe-3f6674e95911 
+                                                                Job Queue
+                                                                  │
+                                                                  ▼
+                                                          Queue Ordering
+                                                        (priority + DRF)
+                                                                  │
+                                                                  ▼
+                                                          Quota Enforcement
+                                                                  │
+                                                                  ▼
+                                                          Gang Feasibility
+                                                                  │
+                                                                  ▼
+                                                          Preemption Planner ( to evict pods)
+                                                                  │
+                                                                  ▼
+                                                          Heuristic Placement (using binpacking scheduler weighted algo)
+                                                                  │
+                                                                  ▼
+                                                              MIP Solver ( minimize cost and fragementation keeping constraints on WNO, system overhead, workload level overhead)
+                                                                  │
+                                                                  ▼
+                                                            Node Binding
+                                                                  │
+                                                                  ▼
+                                                          Async Defragmenter
+                            - ML Driven weight adjust to solver 
+                              - Static solver weights often fail due to dynamic workloads. Pinterest added an ML-driven feedback loop.
+                              - Architecture 
+                                    Scheduler
+                                        │
+                                      MIP Placement Decision
+                                        │
+                                      Cluster Metrics Collection
+                                        │
+                                      Feature Extraction
+                                        │
+                                      ML Model
+                                        │
+                                      Updated Solver Weights
+                              - Features used 
+                                  | Feature             | Meaning               |
+                                  | ------------------- | --------------------- |
+                                  | fragmentation ratio | unused capacity       |
+                                  | pending jobs        | scheduling pressure   |
+                                  | preemption rate     | scheduler instability |
+                                  | GPU idle time       | hardware waste        |
+                                  | queue latency       | scheduling delay      |
+                              - Model Options
+                                1. XGBoost (Preferred) : high performant Gradient Boosted Trees
+                                2. Reinforcement Learning
+                                3, Bayesian optimization
+                              - Output: optimal weights for solver objective:
+                                  minimize:
+                                    w1 * fragmentation
+                                    + w2 * migration cost
+                                    + w3 * preemption rate
+                                    + w4 * scheduling latency
+                                This allows the scheduler to adapt automatically to workload changes.
 
-                  2. multiple 100+ demand sources : 
-                      - This is hard but performing below steps helped 
-                        1. group demand sources based on throughput and stopper metrics
-                        2. integrate ML to undestand anamolies on existing groups and perform re-group using clustering algorithm
-                      Pros : easier to manage
-                      Cons : too much resource overhead on load testing because of time-based and grouping
-                
 
-                 QUESTION : 
-                       
-                     What if Demand sources limit/quotas not set (unbounded)
-                      - For viral content, we use promise cache to avoid multiple requests for same resource.
-                      - Service level rate limiter with spike buffer
+                            - To speed up execution, each plugin run independently 
+                                QUEUE STAGE
+                                  PriorityPlugin
+                                  DRFPlugin
 
-                   
-                How autoscaling is done ? 
+                                FILTER STAGE
+                                  QuotaPlugin
+                                  GangPlugin
+
+                                PREEMPTION STAGE
+                                  PreemptionPlanner
+
+                                OPTIMIZATION STAGE
+                                  MIPSolver
+
+                                BIND STAGE
+                                  NodeBinder
               
-                  - while scaling down, 
-                    - it prioritizes intersections which has low traffic by first tagging the service router to not route traffic to selected hosts (machine per 1% of throughput)
-                    - checks the impact on throughput and stopper metrics 
-                    - decomission the hosts
-                  - while scaling up.
-                    - similar strategy but to save costs further it tries to consume capacity from released flexible pool of machines rather than service selected machine type 
+                        - Architecture : jobs processed in parallel for speed 
+                            Scheduler Core
+                                │
+                                ├── Worker Thread 1
+                                ├── Worker Thread 2
+                                ├── Worker Thread 3
+                          
 
-                What about autoscaling on stateful services ? 
-                - this is hard and manual often and needs to be carefully done if automation but thumb rule always scale up/down on replicas  
-                  - Database server : can be solved with external shard manager like Orion. So load testing + capacity automation would work but only replicas should be impacted without touching primary.
-                  - Websocket server : using load balancer, add new connections during scale up, wait for existing connection to drain to scale down 
-                  - Server having in memory-cache : periodic snapshot so that new server can have the cache to help with scale up, remove server if its not a server with primary cache. This would need external shard manager like Orion for Database server.
-
-            Solution for Utilization Efficiency : Defragmentation using multi-level scheduler 
-              https://chatgpt.com/c/69b53d2a-a4a4-8325-aabe-3f6674e95911 
-                                                    Job Queue
-                                                      │
-                                                      ▼
-                                              Queue Ordering
-                                            (priority + DRF)
-                                                      │
-                                                      ▼
-                                              Quota Enforcement
-                                                      │
-                                                      ▼
-                                              Gang Feasibility
-                                                      │
-                                                      ▼
-                                              Preemption Planner ( to evict pods)
-                                                      │
-                                                      ▼
-                                              Heuristic Placement (using binpacking scheduler weighted algo)
-                                                      │
-                                                      ▼
-                                                  MIP Solver ( minimize cost and fragementation keeping constraints on WNO, system overhead, workload level overhead)
-                                                      │
-                                                      ▼
-                                                Node Binding
-                                                      │
-                                                      ▼
-                                              Async Defragmenter
-
-              - To speed up execution, each plugin run independently 
-                  QUEUE STAGE
-                    PriorityPlugin
-                    DRFPlugin
-
-                  FILTER STAGE
-                    QuotaPlugin
-                    GangPlugin
-
-                  PREEMPTION STAGE
-                    PreemptionPlanner
-
-                  OPTIMIZATION STAGE
-                    MIPSolver
-
-                  BIND STAGE
-                    NodeBinder
-              
-              - Architecture : jobs processed in parallel for speed 
-                  Scheduler Core
-                      │
-                      ├── Worker Thread 1
-                      ├── Worker Thread 2
-                      ├── Worker Thread 3
-                
-
-              - Throughput numbers 
-                | System     | Scheduling throughput |
-                | ---------- | --------------------- |
-                | Borg       | 10k tasks/sec         |
-                | Kubernetes | ~1000 pods/sec        |
-                | Ray        | ~1M tasks/sec         |
+                        - Throughput numbers 
+                          | System     | Scheduling throughput |
+                          | ---------- | --------------------- |
+                          | Borg       | 10k tasks/sec         |
+                          | Kubernetes | ~1000 pods/sec        |
+                          | Ray        | ~1M tasks/sec         |
 
               
 
