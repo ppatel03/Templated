@@ -4550,6 +4550,20 @@ Distributed systems today and Benchmarking on common systems
               Challenges with Cassandra
                 1. Data loss or durability challenge : LWW (last write wins) is common issue with multi-leader replication and leaderless databases like Cassandra - Pg 292 DDIA. With Paxos, you can achieve Linearizability but face issue with LWW if clocks are not synchronized.
                 2. Cassandra uses consistent hashing and so not good for range queries
+
+              Key Replication Strategies
+                  - NetworkTopologyStrategy (Recommended): Designed for production. It allows you to specify the replication factor for each datacenter independently, ensuring high availability across multiple physical locations.
+                  - SimpleStrategy: Used for single-datacenter, single-rack clusters. It places the first replica on a node chosen by the partitioner and subsequent replicas on the next nodes clockwise in the ring. 
+                  
+                  Replication Factors
+                  - The Replication Factor (RF) is defined at the keyspace level, indicating how many nodes will hold a copy of the data.
+                    - RF=1: Only one copy (no fault tolerance).
+                    - RF=3: Highly recommended for production to balance performance and fault tolerance. 
+                  
+                  Key Considerations
+                  - Rack Awareness: NetworkTopologyStrategy places replicas on different racks to handle node failures safely.
+                  - Consistency Levels: Defines how many replicas must respond to a read/write for success (e.g., ONE, QUORUM, ALL).
+                  - Locality: NetworkTopologyStrategy supports local-datacenter reads, reducing cross-datacenter latency.
                 
               Benchmarking
                 - Expensive hardware https://www.scylladb.com/2021/08/19/cassandra-4-0-vs-cassandra-3-11-comparing-performance/
