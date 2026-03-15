@@ -4694,7 +4694,8 @@ Distributed systems today and Benchmarking on common systems
 
     Presto
       https://www.youtube.com/watch?v=hEFsHQ_kJR8 
-       - similar to Hive, but has amazing capability of query multiple databases - noSQL + SQL ones including Hive. It is optimized for latency and thus used for interactive queries or quick data exploration. Facebook uses Presto.
+       - similar to Hive, but has amazing capability of query multiple databases - noSQL + SQL ones including Hive. It is optimized for latency and thus used for interactive queries or quick data exploration. 
+       - As compared to spark, Presto engine has pre-warmed up cluster which makes it better for interactive queries, with MPP architecture support  and thus no start up time is involved. Facebook uses Presto.
       Nice clarification about Presto
         https://ahana.io/learn/presto/
         - Presto does not use Map reduce 
