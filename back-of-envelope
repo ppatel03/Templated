@@ -4194,6 +4194,54 @@ Distributed systems today and Benchmarking on common systems
                 - Using Perfspect : Detected Backend stalls 
                   - Reason : cache-misses, pointer heavy data structures, large object allocations 
                   - Fix : 
+                        1. Improve Cache Locality : Replace pointer-heavy structures.
+                            Example:
+                              LinkedList → ArrayList
+                              HashMap → primitive maps
+                            Benefits:
+                              sequential memory access
+                              better CPU cache utilization
+                              fewer cache misses
+
+                        2. Reduce Object Allocation
+                            Large numbers of short-lived objects cause:
+                              memory pressure
+                              GC overhead
+                              cache churn
+                            Fix:
+                              Use object pooling and reuse.
+                            Example:
+                              ThreadLocal buffers
+                              Netty ByteBuf reuse
+                              Arena allocators
+                            Impact:
+                              reduced GC pauses
+                              lower memory allocation overhead
+
+                          3. Flatten Data Structures
+                              Example bad pattern:
+                                User → Address → Metadata → Attributes
+                                Each pointer jump triggers cache miss.
+                              Fix:
+                                Flatten frequently accessed fields.
+                                    User {
+                                      id
+                                      country
+                                      language
+                                    }
+                              Benefits:
+                                fewer memory dereferences
+                                improved cache locality
+
+                            4. Use SIMD Accelerated Libraries
+                              Backend stalls also came from inefficient serialization.
+                              Fix:
+                                Use SIMD optimized libraries:
+                                simdjson
+                                vectorized protobuf parsing
+                              Benefits:
+                                fewer instructions
+                                lower memory latency
                 - ML Serving Infra and Efficiency
                   https://www.youtube.com/watch?v=s-eVxzHMgI0 
                   - vector optimization using sparse matrix multiplication
