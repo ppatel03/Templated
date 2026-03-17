@@ -4156,26 +4156,17 @@ Distributed systems today and Benchmarking on common systems
 
 
         - Amazon
-          - Demand efficiency ( all end customers)
-            - add eBPF for cloud cost optimizer
-            - Right sizing :  add seamless instance family migration to AWS Karpenter feature to save costs 
-          - Platform efficiemncy 
-            - Software 
-              - Redshift and Elasticseach
-                - set quotas
-                - from Code guru profiler stats
-                - async io
-                - biosnoop to avoid unwanted disk access
-                - logging optimization 
-                - memoization 
-                - promise caching
-                - dead if
-                - case study of eBPF observability
-                  - https://docs.google.com/document/d/1c_B2-Jcz4tlmtyoOMsnX5hZzlMtP4LHJPYW6GZPJ8bY/edit?tab=t.0
-            - Utilization ( no problems on autoscaling )
+          - For Customers, Help in launching Cloud cost optimizer product
+            - demand attribution support to show the cost by both product and teams 
+            - eBPF insights to Code guru profilers 
+            - Automated software recommendations ( memoizations, dead ifs, GKs, unused tables or in frequency queries, regrex pre-compilation, 
+            compression, serde, async io, promise cache )
+
+          - For Amazon, Solve capacity problem by
+            1) Improve Utilization at HW level ( no problems on autoscaling )
               - defragmentation using Live migration 
-            - HW efficiency
-              - degrade efficiency by smartly select high risk hosts based on temperature, age, power supply, DCO bandwidth and capacity to evacuate 
+            2) HW Degrade efficiency
+              - degrade efficiency and on time by smartly select high risk hosts based on temperature, age, power supply, DCO bandwidth and capacity to evacuate 
           
 
             
