@@ -4254,7 +4254,7 @@ Distributed systems today and Benchmarking on common systems
                   - high throughput with batching : saves majority of cost ( example, 70% savings from 5ms for 1 req vs 20ms for 32 reqs) but make sure there is 5-10ms window for latency sensitive workloads and 50 ms for thoughput-optimized workloads 
                   - 50% reduction in gpus with FP32 to FP16 (or preferred BF16 which does not underflow since it has same 8 exponential bits) precision 
                   - 75% reduction in gpus with FP32 to INT8 but accuracy needs to be validated 
-                  
+
               - Hardware efficiency : 40%
                   - Moving to P family for better cpu->gpu bandwidth by offering NVLink support which improved our GPU utilization : 10M$
                   - Moving to EFA reduced 60% GPU hours : 10M$
@@ -4263,8 +4263,8 @@ Distributed systems today and Benchmarking on common systems
 
               - Utilization efficiency : 30%
                   - Most workloads were able to meet 70% utilization for their bottleneck metrics. So little opportunity here 
-                  - 
-                  - Fragmnetation opportunity : 20M$
+                  - per GPU slicing with MIG 
+                  - Fragmnetation opportunity : 
                      - Scheduler optimization to reduce defragmentation for batch, ML and online workloads 
                       - Solution for Utilization Efficiency : Defragmentation using multi-level scheduler 
                           https://chatgpt.com/c/69b53d2a-a4a4-8325-aabe-3f6674e95911 
