@@ -4180,8 +4180,8 @@ Distributed systems today and Benchmarking on common systems
 
             
           Pinterest 
-            - Problem : Pinterest Infra cost is major contributution towards margin and goal was to save 100M$ every year 
-              - Software efficiency : 50M$
+            - Problem : Pinterest Infra cost is major contributution towards margin and goal was to save 100M$ every year for 3 years 
+              - Software efficiency : 30%
                 - Having profiling tool set up ( both agent and backend infra) onboarded using Intel's gProfiler which is open source, essemble profile of 8+ different languages, has intel perfspect and also have active partnership with Intel
                   - Bad patterns : 
                     - Regex optimization by static initialization of Pattern.compile
@@ -4242,21 +4242,29 @@ Distributed systems today and Benchmarking on common systems
                               Benefits:
                                 fewer instructions
                                 lower memory latency
-                - ML Serving Infra and Efficiency
+                - ML Training ( 2026+)
+                  - dimensionality reduction in input features
+                - Prompt Optimization ( 2026+ )
+                  - Token reduction with Embeddings + RAG 
+                  - Caching 
+                  - Model routing
+                - ML Serving Infra and Efficiency ( 2026+)
                   https://www.youtube.com/watch?v=s-eVxzHMgI0 
                   - vector optimization using sparse matrix multiplication
                   - high throughput with batching : saves majority of cost ( example, 70% savings from 5ms for 1 req vs 20ms for 32 reqs) but make sure there is 5-10ms window for latency sensitive workloads and 50 ms for thoughput-optimized workloads 
                   - 50% reduction in gpus with FP32 to FP16 (or preferred BF16 which does not underflow since it has same 8 exponential bits) precision 
                   - 75% reduction in gpus with FP32 to INT8 but accuracy needs to be validated 
-              - Hardware efficiency : 50M$
+                  
+              - Hardware efficiency : 40%
                   - Moving to P family for better cpu->gpu bandwidth by offering NVLink support which improved our GPU utilization : 10M$
                   - Moving to EFA reduced 60% GPU hours : 10M$
                   - Moving to I, M and P : Load testing revealed that improving utilization greater than 70% impacted throughput and later found that most % of fleet are backend bound based on Perfspect. This motivated to move towards m family due to better memory bandwidth and also 50% cheaper. So we purchased backdated ISPs yielding 30M$
                   - Moving to consolidated metal sizes : Our anlaysis binpacking on large 24xl metal sizes can further can save the cost since 30% fragmentation on multiple smaller size instance is expensive than 30% fragmentation on large size instances. Metal gives direct access to cores and moving sidecars to daemonset in kubernetes can further reduce the cost.
 
-              - Utilization efficiency : 20M$
+              - Utilization efficiency : 30%
                   - Most workloads were able to meet 70% utilization for their bottleneck metrics. So little opportunity here 
-                  - Fragmnetation opportunity : 20M$ 
+                  - 
+                  - Fragmnetation opportunity : 20M$
                      - Scheduler optimization to reduce defragmentation for batch, ML and online workloads 
                       - Solution for Utilization Efficiency : Defragmentation using multi-level scheduler 
                           https://chatgpt.com/c/69b53d2a-a4a4-8325-aabe-3f6674e95911 
