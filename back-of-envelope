@@ -4176,6 +4176,7 @@ Distributed systems today and Benchmarking on common systems
                 - Having profiling tool set up ( both agent and backend infra) onboarded using Intel's gProfiler which is open source, essemble profile of 8+ different languages, has intel perfspect and also have active partnership with Intel. It has dynamic managed profiling support.
                     - agent optimization challenges :  memory leaks, eBPF profilers, stack unwinding in kernel, streaming for stack enrichment 
                     - backend scalability challenge : stateful service - Clickhouse scaling using Orion, Load testing and resource estimation, scalability with serverless - Aurora Postgresql, SQS and durability using S3. 
+                    - networking and security :  Envoy ( traffic routing, internal UI, AAA, rate limiting, )
                   - Bad patterns : 
                     - Regex optimization by static initialization of Pattern.compile
                   - Research heavy : 
