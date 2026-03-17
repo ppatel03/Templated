@@ -4312,6 +4312,7 @@ Distributed systems today and Benchmarking on common systems
                                   | Feature             | Meaning               |
                                   | ------------------- | --------------------- |
                                   | fragmentation ratio | unused capacity       |
+                                  | system overhead     | unused capacity       |
                                   | pending jobs        | scheduling pressure   |
                                   | preemption rate     | scheduler instability |
                                   | GPU idle time       | hardware waste        |
