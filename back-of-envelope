@@ -4173,7 +4173,9 @@ Distributed systems today and Benchmarking on common systems
           Pinterest 
             - Problem : Pinterest Infra cost is major contributution towards margin and goal was to save 100M$ every year for 3 years. The challenges is most low hanging fruits of utilization based right sizing opportunities  have been diminishing YoY. Pinterest already had 50-70% utilization based on their bottleneck resource. So we need to look deeper. 
               - Software efficiency : 30%
-                - Having profiling tool set up ( both agent and backend infra) onboarded using Intel's gProfiler which is open source, essemble profile of 8+ different languages, has intel perfspect and also have active partnership with Intel. It has dynamic managed profiling support 
+                - Having profiling tool set up ( both agent and backend infra) onboarded using Intel's gProfiler which is open source, essemble profile of 8+ different languages, has intel perfspect and also have active partnership with Intel. It has dynamic managed profiling support.
+                    - agent optimization challenges :  memory leaks, eBPF profilers, stack unwinding in kernel, streaming for stack enrichment 
+                    - backend scalability challenge : stateful service - Clickhouse scaling using Orion, Load testing and resource estimation, scalability with serverless - Aurora Postgresql, SQS and durability using S3. 
                   - Bad patterns : 
                     - Regex optimization by static initialization of Pattern.compile
                   - Research heavy : 
