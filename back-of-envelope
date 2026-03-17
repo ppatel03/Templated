@@ -4156,9 +4156,9 @@ Distributed systems today and Benchmarking on common systems
 
 
         - Amazon
-          - For Customers, Help in launching Cloud cost optimizer product
+          - For Customers, Help in launching Cloud cost optimizer product with tracing agent baked into ami
             - demand attribution support to show the cost by both product and teams 
-            - eBPF insights to Code guru profilers 
+            - eBPF insights to Code guru profilers baked 
             - Automated software recommendations ( memoizations, dead ifs, GKs, unused tables or in frequency queries, regrex pre-compilation, 
             compression, serde, async io, promise cache )
 
