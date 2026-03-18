@@ -4256,6 +4256,7 @@ Distributed systems today and Benchmarking on common systems
                   - 75% reduction in gpus with FP32 to INT8 but accuracy needs to be validated 
 
               - Hardware efficiency : 40%
+                  - Automated ODCR leveling which free up sizes and also help with ISP cycle renewal
                   - Moving to P family for better cpu->gpu bandwidth by offering NVLink support which improved our GPU utilization : 10M$
                   - Moving to EFA reduced 60% GPU hours : 10M$
                   - Moving to I, M and P : Load testing revealed that improving utilization greater than 70% impacted throughput and later found that most % of fleet are backend bound based on Perfspect. This motivated to move towards m family due to better memory bandwidth and also 50% cheaper. So we purchased backdated ISPs yielding 30M$
