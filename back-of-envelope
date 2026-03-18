@@ -4172,7 +4172,7 @@ Distributed systems today and Benchmarking on common systems
             
           Pinterest 
             - Problem : Pinterest Infra cost is major contributution towards margin and goal was to save 100M$ every year for 3 years. The challenges is most low hanging fruits of utilization based right sizing opportunities  have been diminishing YoY. Pinterest already had 50-70% utilization based on their bottleneck resource. So we need to look deeper. 
-              - Capacity Tooling 
+              - Capacity Enforcement Tooling 
                 - Enforcement solution which avoids budgets overrun 
                   - Base platform : Kubernetes and Spark platform in 2025,2026
                   - Multi-tenant platforms : MLP, MySQL, Key-value, Column store 2026-2027
