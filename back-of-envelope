@@ -4243,6 +4243,7 @@ Distributed systems today and Benchmarking on common systems
                                 lower memory latency
                 - ML Training ( 2026+)
                   - dimensionality reduction in input features
+                  - vector optimization using sparse matrix multiplication
                 - Prompt Optimization ( 2026+ )
                   - Token reduction with Embeddings + RAG 
                   - Caching 
