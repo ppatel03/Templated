@@ -4269,11 +4269,42 @@ Distributed systems today and Benchmarking on common systems
                     - non vector db use case since vector DB like Weavite support HNSW which includes skip list and part of implementation does support sparse matrix multiplication
                 - Prompt Optimization ( 2026+ )
                   - Token reduction with Embeddings + RAG 
-                  - Caching 
+                  - Caching eps. for embeddings  
                   - Model routing
                 - ML Serving Infra and Efficiency ( 2026+)
                   https://www.youtube.com/watch?v=s-eVxzHMgI0 
-                  - high throughput with batching : saves majority of cost ( example, 70% savings from 5ms for 1 req vs 20ms for 32 reqs) but make sure there is 5-10ms window for latency sensitive workloads and 50 ms for thoughput-optimized workloads 
+                  - knowledge distillation ( teacher-student approach) like in Roblox https://blog.bytebytego.com/p/how-roblox-uses-ai-to-translate-16 
+                  - embedding caching like in Roblox https://blog.bytebytego.com/p/how-roblox-uses-ai-to-translate-16 
+                  - high throughput with batching : saves majority of cost ( example, 70% savings from 5ms for 1 req vs 20ms for 32 reqs) but make sure there is 5-10ms window for latency sensitive workloads and 50 ms for thoughput-optimized workloads
+                      - Latency is in fact better with batching https://chatgpt.com/c/69b86f52-7544-832e-a812-06e6ca2956c8?src=history_search  because 
+                        1. It avoids kernel launch overhead 
+                          For a single request:
+
+                              CPU → GPU launch (overhead)
+                              Compute
+                              CPU → GPU launch
+                              Compute
+                              ...
+
+                              That overhead is non-trivial (microseconds–milliseconds).
+
+                              With batching:
+                              One kernel launch → process 16 requests
+                          2. Better Memory Access Patterns 
+                              For a single request:
+
+                                Random memory access
+                                Cache underutilized
+
+                              For batched requests:
+
+                                Sequential, coalesced access
+                                Better cache reuse
+                                Fewer memory stalls
+
+                                👉 This directly reduces per-token latency in LLMs.
+                          3. Transformer Parallelism (LLMs)
+
                   - Quantization : 50% reduction in gpus with FP32 to FP16 (or preferred BF16 which does not underflow since it has same 8 exponential bits) precision 
                   - Quantization : 75% reduction in gpus with FP32 to INT8 but accuracy needs to be validated 
 
