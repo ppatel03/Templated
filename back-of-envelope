@@ -313,6 +313,20 @@ Time to understand scalability, latency aspects
 
       c. Think about edge cases for product
         1. Rate limiter 
+          - Where should the rate limiter be placed 
+            - https://chatgpt.com/c/69b25b64-ca7c-832e-a1d2-bb78d103fdaf 
+                        Client
+                          ↓
+                        Edge Load Balancer (L4/L7)
+                          ↓
+                        API Gateway / Edge Proxy
+                          ↓
+                        Rate Limiter / Auth / WAF
+                          ↓
+                        Internal Load Balancer
+                          ↓
+                        Application Servers / Microservices
+               
           - Algorithms 
            - Token bucket : requests check if it can get the token from bucket, if bucket has token then request can pass through  
               - Pros : great algo to allow burst traffic. Example if your bucket is 10 and fill rate is 5/min, you could have burst update 10 request/min
