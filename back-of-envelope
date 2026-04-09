@@ -339,6 +339,14 @@ Time to understand scalability, latency aspects
               - Cons : has boundary issue
            - Sliding window is the best 
               - Pros :  one param to tune, no boundary issue 
+          - Design : 
+                        Rate Limiting Rules config
+                                 |
+                                 V
+              Client -> Rate Limiter Middleware --> API Servers
+                                |
+                                V
+                              Redis ( supports lua scripts extension to execute atomically)
           - Implementation 
             - distributed counting using redis (single threaded and hence atomic). Race condition can be avoid using Redis sorted set + help of Lua script which executes atomically
               SLIDING_WINDOW_LUA_SCRIPT = """
