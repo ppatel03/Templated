@@ -4274,8 +4274,8 @@ Distributed systems today and Benchmarking on common systems
                 - ML Serving Infra and Efficiency ( 2026+)
                   https://www.youtube.com/watch?v=s-eVxzHMgI0 
                   - high throughput with batching : saves majority of cost ( example, 70% savings from 5ms for 1 req vs 20ms for 32 reqs) but make sure there is 5-10ms window for latency sensitive workloads and 50 ms for thoughput-optimized workloads 
-                  - 50% reduction in gpus with FP32 to FP16 (or preferred BF16 which does not underflow since it has same 8 exponential bits) precision 
-                  - 75% reduction in gpus with FP32 to INT8 but accuracy needs to be validated 
+                  - Quantization : 50% reduction in gpus with FP32 to FP16 (or preferred BF16 which does not underflow since it has same 8 exponential bits) precision 
+                  - Quantization : 75% reduction in gpus with FP32 to INT8 but accuracy needs to be validated 
 
               - Hardware efficiency : 40%
                   - Automated ODCR leveling which free up sizes and also help with ISP cycle renewal
