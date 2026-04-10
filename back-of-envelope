@@ -394,7 +394,8 @@ Time to understand scalability, latency aspects
               - Cassandra provides pluggable replication strategies by allowing different implementations of the AbstractReplicationStrategy class. Out of the box, Cassandra provides a couple of implementations, SimpleStrategy and NetworkTopologyStrategy.
               - Once the partitioner calculates the token and places the data in the main node, the SimpleStrategy places the replicas in the consecutive nodes around the ring.
               - On the other hand, the NetworkTopologyStrategy allows us to specify a different replication factor for each data center. Within a data center, it allocates replicas to nodes in different racks in order to maximize availability.
-              - The NetworkTopologyStrategy is the recommended strategy for keyspaces in production deployments, regardless of whether it’s a single data center or multiple data center deployment 
+              - The NetworkTopologyStrategy is the recommended strategy for keyspaces in production deployments, regardless of whether it’s a single data center or multiple data center deployment
+          - Deeper insights is here : https://chatgpt.com/c/69d88f32-5dac-83e8-87a0-a025ac3ad458  
         3. Key value store 
           - data partition - consistent hashing 
           - data replication
