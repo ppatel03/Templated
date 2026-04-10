@@ -4265,14 +4265,16 @@ Distributed systems today and Benchmarking on common systems
                               Benefits:
                                 fewer instructions
                                 lower memory latency
+                 - Prompt Optimization ( 2026+ )
+                  - Token reduction with Embeddings + RAG 
+                  - Caching eps. for embeddings  
+                  - Model routing
+                  
                 - ML Training ( 2026+)
                   - dimensionality reduction in input features
                   - vector optimization using sparse matrix multiplication
                     - non vector db use case since vector DB like Weavite support HNSW which includes skip list and part of implementation does support sparse matrix multiplication
-                - Prompt Optimization ( 2026+ )
-                  - Token reduction with Embeddings + RAG 
-                  - Caching eps. for embeddings  
-                  - Model routing
+               
                 - ML Serving Infra and Efficiency ( 2026+)
                   https://www.youtube.com/watch?v=s-eVxzHMgI0 
                   - knowledge distillation ( teacher-student approach) like in Roblox https://blog.bytebytego.com/p/how-roblox-uses-ai-to-translate-16 
