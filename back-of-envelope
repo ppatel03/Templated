@@ -4207,6 +4207,7 @@ Distributed systems today and Benchmarking on common systems
                     - networking and security :  Envoy ( traffic routing, internal UI, AAA, rate limiting, )
                   - Bad patterns : 
                     - Regex optimization by static initialization of Pattern.compile
+                    - Buffer pooling 
                   - Research heavy : 
                     - Compression level tuning for ZStd ( high compression) vs Zlibng ( balanced) vs LZ64 ( low compression so fast but impacts network throughput)
                     - Serde with simd json library ( 2026+)
