@@ -4210,6 +4210,7 @@ Distributed systems today and Benchmarking on common systems
                     - Buffer pooling 
                   - Research heavy : 
                     - Compression level tuning for ZStd ( high compression) vs Zlibng ( balanced) vs LZ64 ( low compression so fast but impacts network throughput)
+                    - Video compression tuning presets with ffmpeg
                     - Serde with simd json library ( 2026+)
                 - Using Perfspect :  Detected Frontend stall on gson library (2026+)
                   - Reason : branch misprediction and dynamic reflection ( different data types)
@@ -4269,7 +4270,7 @@ Distributed systems today and Benchmarking on common systems
                   - Token reduction with Embeddings + RAG 
                   - Caching eps. for embeddings  
                   - Model routing
-                  
+
                 - ML Training ( 2026+)
                   - dimensionality reduction in input features
                   - vector optimization using sparse matrix multiplication
