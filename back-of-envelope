@@ -432,7 +432,7 @@ Time to understand scalability, latency aspects
             - Hash function : 62 ^ n = 300 B urls. So n ~ 7 chars 
             - Techniques 
               - hash + collison resolution 
-                - SHA-1 (120 bits), SHA-256 (256 bits)
+                - SHA-1 (120 bits which will take 2^61 operations to generate collision), SHA-256 (256 bits which will take 2^120 operations to generate collision)
                 - bloom filter to improve look up 
               - Base 62 conversion 
                 - using unique id generator, generate unique id then perform  unique id % 62 
