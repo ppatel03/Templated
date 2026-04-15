@@ -443,20 +443,35 @@ Time to understand scalability, latency aspects
                 - cannot figure next url vs easy to figure out next url if unique id increments by 1 for new entry 
             - Others : Rate limiter (avoid overflow), Scaling with stateless, DB scaling with replication & sharding, Analytics 
           6. Web Crawler 
+            - Advanced : https://chatgpt.com/c/69deeafe-1804-83e8-8ad6-71e01940a7a2 
             - High level : 
-              URL frontier (Seed urls)-> Queue-> Downloader (DNS resolover, robots.txt) ->Q-> Content Parser(Dedup + DB for processing/indexing) -> Q-> Link Extractor (Dedup + Detect maliciousness) -> Q ->send to frontier
+              URL frontier (Seed urls)-> Queue-> Downloader (DNS resolover, robots.txt, redirects, async I/O) ->Q-> Content Parser(Dedup + DB for processing/indexing) -> Q-> Link Extractor (Dedup with bloom filters + Detect maliciousness) -> Q ->send to frontier
             - BFS over DFS
             - URL Frontier 
               - politeness ( avoid too many requests and getting blocked by rate limiter )
               - priority based on (pagerank) and Freshness (update history)
             - Downloader (Robots)
               - performance : distributed crawl, cache DNS, Locality, short timeout
-            - Reliability/Robustness : scaling using consistent hashing, save state using Q, exception handling,
-            - Extensibility : Rather than just "text", support new content types say images or video 
-            - Detect and avoid malciousness
-              - redundant content using deduplication with hashing
+              - Handle redirects 
+              - Advanced : async I/O, epoll ( event driven model at kernel layer)
+              - Connection pooling, HTTP/2 multiplexing
+            - Content parser 
+              - redundant content using deduplication with hashin ( MD5 / SHA)
+              - Raw content : Blob store 
+              - Metadata store ( Cassandra ): URL, status, crawl time
+              - Only Fetch changed content 
+                - eTag or Last-Modified headers  
+            - Link Extractor 
+              - use bloom filters to dedup
               - avoid spider traps by setting max depth (A spider trap is a web page that causes a crawler in an infinite loop either through dynamically generated links or recursive links.)
               -  noise (ads, code snippets)
+            - Back to Frontier Queue : 
+              - Recrawl Strategy
+                1. Fixed interval : simple but inefficient
+                2. Adaptive Recrawl : based on change frequency, last modified  
+              - Use hieararchial timewheel for scheduling next crawl 
+            - Reliability/Robustness : scaling using consistent hashing, save state using Q, exception handling,
+            - Extensibility : Rather than just "text", support new content types say images or video 
             - Others : Server side rendering, Scaling with statelessness, DB replication and sharding, Analytics
                 - Server side rendering using Dynamic rendering ( Dynamic Rendering: A technique where the server serves pre-rendered content to crawlers while serving client-side rendered content to regular users.)
                   -Dynamic rendering is done with help of user-agent header 
