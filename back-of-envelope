@@ -444,7 +444,7 @@ Time to understand scalability, latency aspects
             - Others : Rate limiter (avoid overflow), Scaling with stateless, DB scaling with replication & sharding, Analytics 
           6. Web Crawler 
             - High level : 
-              URL frontier (Seed urls)-> Queue-> Downloader (DNS resolover) ->Q-> Content Parser( DB) -> Q-> Link Extractor ( Dedup) -> Q ->send to frontier
+              URL frontier (Seed urls)-> Queue-> Downloader (DNS resolover, robots.txt) ->Q-> Content Parser(Dedup + DB for processing/indexing) -> Q-> Link Extractor (Dedup + Detect maliciousness) -> Q ->send to frontier
             - BFS over DFS
             - URL Frontier 
               - politeness ( avoid too many requests and getting blocked by rate limiter )
