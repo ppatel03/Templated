@@ -1086,6 +1086,17 @@ Time to understand scalability, latency aspects
                     - promise cache for stream-table join
                     - low frequency checkpointing 
                     - async i/o support for jobs
+                  
+                  Scheduling Algo 
+                    - Quota fariness + premption + Gang scheduling + MIP scheduler ( fragementation, system overhead, instance types supported, workload overhead, WNO) over just built in binpacking scheduler 
+
+                  Scheduling at schedule time 
+                    - this is hard problem since polling DB is expensive for 10M+ entries at scale https://chatgpt.com/g/g-p-698235e6d2ac8191b248a12be431269a-system/c/69ddafef-ccbc-83e8-a260-89ee1a209d57 
+                    - 1. kafka delayed topics or plugins like punchuator which uses time wheel 
+                    - 2. redis pub sub ( which is polling but efficienct due to atomic lua script)
+                    - 3. hiearchial time wheel ( time slots of 1h bucket, 1m bucket and 1s bucket where clock ticks on 1s time slot bucket to schedule all the tasks. Tasks gets promoted to 1m bucket from 1h bucket. Distributed hiearchial time wheel using sharding and DB as reliable storage ). 
+                      - Uber uses this 
+                      - However Netflix still use polling 
 
 
             25. Skyscanner ( price drop alerting system)
