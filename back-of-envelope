@@ -493,7 +493,7 @@ Time to understand scalability, latency aspects
                 User ---> LB ----> API server ----> DB
 
               - during app install or user sign up, 
-                 -  Users Table
+                -  Users Table
                     user_id
                     email
                     phone
