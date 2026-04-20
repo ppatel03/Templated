@@ -490,7 +490,7 @@ Time to understand scalability, latency aspects
               - Email service
                 - Mailchimp or Sendgrid 
             - Contact gathering flow  
-              - during app install or user sign up, collects user name,  device info ( phone number, certificate, device token), phone number
+              - during app install or user sign up, collects user name,  device info ( phone number, certificate, device token), phone number, email,
                   User ---> LB ----> API server ----> DB
             - High level design 
               - sender services -> notification service (DB look up) -> Device + notification type queue -> Consumers -> Service Providers (APNs, FCMs, Twilio, MailChimp)
