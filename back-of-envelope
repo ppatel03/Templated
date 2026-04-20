@@ -482,6 +482,7 @@ Time to understand scalability, latency aspects
                     - Normal user
                       - User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36
           7. Design A Notification System
+           https://chatgpt.com/c/69e5ca13-fe08-83e8-a29f-a2877ef977f8 
             - Different types of notification
               - App notification
                 - iOS : APNs, Android : FCM. For this you need two things - certificate upload(to build trust between APN/FCM provider and device) and device token (for APNs/FCM to track about what device)
@@ -502,7 +503,7 @@ Time to understand scalability, latency aspects
                     user_id
                     notification_type
                     channel_enabled (push/email/sms)
-                - Notifications Table (optional persistence)
+                - Notifications Table (optional persistence to track the status)
                     notification_id
                     user_id
                     status (sent/failed)
@@ -513,12 +514,31 @@ Time to understand scalability, latency aspects
 
             - Reliability (exactly once processing, prevent data loss by logging failed messages for retry)
             - Notification template (cached in our DB so that Consumer can use it)
-            - Notification setting (opt in / opt out)
+            - Notification preferences (opt in / opt out)
             - Rate limiting ( avoid users with too many notifications)
             - Retry (PUT IT BACK TO THE QUEUE OR DLQ after multiple retries)
             - Security (certificate upload, Appkey/appSecret pair between our notification service and providers)
             - Monitor queued notifications
             - Events tracking (state of notification)
+            - Scheduled Notifications
+              Use:
+                Delay queues OR
+                Time-wheel (like Uber does)
+              Design Flow:
+                Notification Service -> Scheduler → Queue → Processor → Send
+            - Notification Aggregation
+                Instead of:
+                  10 messages → 10 notifications ❌
+                Do:
+                  "You have 10 new messages" ✅
+                Implementation:
+                  Buffer events in Redis ( redis supports both counters during insert or you can aggregate on-read using ft.aggregate)
+                  Flush periodically
+            - Priority Queues
+                High priority → immediate (OTP)
+                Low priority → batch (digest emails)
+            
+
           8. Design A News Feed System
             - build timeline On-Demand vs Push
               - on-demand for celebrities posts (> 1 M followes)
