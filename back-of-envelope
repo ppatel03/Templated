@@ -4241,7 +4241,11 @@ Distributed systems today and Benchmarking on common systems
 
 
         - Amazon
-          - For Customers, Help in launching Cloud cost optimizer product with tracing agent baked into ami
+          - Solve reliability problem of EC2 to make sure AWS exceed the target under 10% annual failure rate and meet high availability 
+            - smart detection of degraded hardware using XGBoost on time by smartly select high risk hosts based on temperature, age, power supply, DCO bandwidth and capacity to evacuate
+            - Software Live migration of VMs without interrupting customer workload
+
+          - For Customers, enrich observability by support cost attribution for services on EC2 and deeper tracing with eBPF in Cloud cost optimizer product 
             - demand attribution support to show the cost by both product and teams 
             - eBPF insights to Code guru profilers baked 
             - Automated software recommendations ( memoizations, dead ifs, GKs, unused tables or in frequency queries, regrex pre-compilation, 
@@ -4256,7 +4260,11 @@ Distributed systems today and Benchmarking on common systems
 
             
           Pinterest 
-            - Problem : Pinterest Infra cost is major contributution towards margin and goal was to save 100M$ every year for 3 years. The challenges is most low hanging fruits of utilization based right sizing opportunities  have been diminishing YoY. Pinterest already had 50-70% utilization based on their bottleneck resource. So we need to look deeper. 
+            - Problem : Pinterest Infra cost is major contributution towards margin and goal was to save 100M$ every year for 3 years especially with AI adoption. The challenges is most low hanging fruits of utilization based right sizing opportunities  have been diminishing YoY. Pinterest already had 50-70% utilization based on their bottleneck resource. So we need to look deeper.
+              - Build LLM observability infrastructure 
+                -  LLM cost tracking infra via monkey patching, mitm proxy, ebpf 
+                -  LLM governance using enforcment 
+                -  LLM cost efficiency with RAG, model routing mechanism 
               - Capacity Enforcement Tooling 
                 - Enforcement solution which avoids budgets overrun 
                   - Base platform : Kubernetes and Spark platform in 2025,2026
