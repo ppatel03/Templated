@@ -2620,11 +2620,15 @@ Distributed best practices
             Example:
             An attacker posts a malicious JavaScript snippet in a comment section.
             When a user views the comment, the script is executed in their browser.
+            Solution : 
+              - input validation
         - Reflected XSS (Non-Persistent XSS):
             The malicious script is embedded in a URL or request sent to the server, and the server reflects it back in its response.
             Example:
             A user clicks on a crafted link containing malicious code.
             The server includes the code in its response, which the browser executes.
+            Solution : 
+              - use CSP (Content Security Policy) to avoid external urls for script source
         - DOM-Based XSS:
             The malicious script is executed directly in the browser by manipulating the client-side Document Object Model (DOM).
             Example:
