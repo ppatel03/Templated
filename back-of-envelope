@@ -2621,20 +2621,35 @@ Distributed best practices
             An attacker posts a malicious JavaScript snippet in a comment section.
             When a user views the comment, the script is executed in their browser.
             Solution : 
-              - input validation
+              - input validation and sanitize before storing 
+              -  use CSP (Content Security Policy) to avoid external urls for script source
         - Reflected XSS (Non-Persistent XSS):
             The malicious script is embedded in a URL or request sent to the server, and the server reflects it back in its response.
             Example:
             A user clicks on a crafted link containing malicious code.
             The server includes the code in its response, which the browser executes.
+
+            Code example : 
+              Hello {{ req.query.name }}
+              
             Solution : 
+              - encode query params before rendering
+              - never directly inject request params in HTML
               - use CSP (Content Security Policy) to avoid external urls for script source
+              - santinize url params
         - DOM-Based XSS:
+            Example : 
+              document.getElementById("msg").innerHTML = location.hash;
+            Fix : 
+              textContent instead of innerHTML
             The malicious script is executed directly in the browser by manipulating the client-side Document Object Model (DOM).
             Example:
             1. The attacker sends malicious input to a user, often through a crafted URL.
             2. The browser loads the web page, and the JavaScript code on the page processes the malicious input (directly from the URL or another source) without proper sanitization.
             3. The script modifies the DOM, and the malicious payload is executed in the user's browser.
+            Soluton : 
+             - santinize url params before use 
+             - avoid parsing raw DOM strings 
 
   Physical cores, Virtual cores and Logical cores
     https://www.youtube.com/watch?v=O2g6381An_k 
