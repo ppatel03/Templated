@@ -2614,7 +2614,9 @@ Distributed best practices
     7. Security Testing - mostly auth related
     8. UI Testing . Tool - Jeste2e
     9. Fuzz Testing - test edge cases and other attacks - SQL injection, XSS, buffer overflow
+
       - XSS (Cross-Site Scripting) is a type of security vulnerability in web applications where an attacker injects malicious scripts (usually JavaScript) into content that is then executed in the user's browser.
+      https://chatgpt.com/c/69f92595-5d5c-832a-bc02-3c845e97d63b 
         - Stored XSS (Persistent XSS):
             The malicious script is permanently stored on the target server (e.g., in a database, message board, or comment field).
             Example:
