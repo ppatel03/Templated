@@ -540,6 +540,7 @@ Time to understand scalability, latency aspects
             
 
           8. Design A News Feed System
+            https://chatgpt.com/g/g-p-698235e6d2ac8191b248a12be431269a/c/69e72a13-8d4c-83e8-8a12-31c375b85395 
             - build timeline On-Demand vs Push
               - on-demand for celebrities posts (> 1 M followes)
               - push for other users post
@@ -565,6 +566,8 @@ Time to understand scalability, latency aspects
               - DB - sharding, Replication and consistency different levels ( quorum or even read after write consistency for post, per user sequential consitency for news feed)
               - Multiple data centers 
               - Metrics monitoring 
+            - Advanced news feed system using two tower + ranking ml model 
+              https://chatgpt.com/g/g-p-698235e6d2ac8191b248a12be431269a/c/69e72a13-8d4c-83e8-8a12-31c375b85395 
           9. Design A Chat System
             - Polling (nw bandwidth) vs Long Polling (still makes periodic one-direction connections) vs WebSocket ( 2-way communication which starts with TCP handshake + TLS + Websocket upgrade)
             - Data model ? 
@@ -906,6 +909,7 @@ Time to understand scalability, latency aspects
                   - Erlang having lightweight process which uses Akka pattern and support 10 million active users
                   
             15. Distributed Message Queue
+              https://chatgpt.com/g/g-p-698235e6d2ac8191b248a12be431269a/c/6a0a5d28-d280-83e8-ac54-bf658914dea2 
               - point to point and pub-sub model 
               - topics, partition and brokers 
               - consumer group (multiple consumers in a group can access the message from the topic by subscribing to multiple partitions. To avoid sync issues, one partition could only be accessed by one consumer in the group)
@@ -917,7 +921,7 @@ Time to understand scalability, latency aspects
                    2. Coordination service  
                       a. Service discovery: which brokers are alive.                                                
                       b. Leader election: one of the brokers is selected as the active controller. There is only one active controller in the cluster. The active controller is responsible for assigning partitions.
-                      c. Apache Zookeeper [2] or etcd [3] are commonly used to elect a controller.
+                      c. Apache Zookeeper [2] or etcd [3] are commonly used to elect a controller. Modern kafka do not use Zookeeper but instead uses kraft
 
 
               - data storage (WAL which will perform sequential IO using disk. Each file could be like a segment. )
@@ -928,14 +932,89 @@ Time to understand scalability, latency aspects
               - replication - partitions replicas into multiple brokers , in sync replicas 
               - scalability 
                   - producer easy since no cordination needed, 
-                  - consumer through coordinator, 
+                  - consumer add/remove through coordinator doing rebalancing
+                    - Naive way on new consumer joins or leave due to crash or timeout
+                      With assignors like Range, RoundRobin, or even Sticky in eager mode, a rebalance often works like this:
+                      1. Revoke all partitions from every consumer in the group.
+                      2. Compute a new assignment.
+                      3. Resume consumption on the new partitions.
+                      While step 1 runs, affected consumers stop reading those partitions. That pause can be noticeable on large groups or slow consumers.
+                    - Cooperative rebalancing on new consumer joins or leave due to crash or timeout
+                      Cooperative (incremental) rebalancing only revokes partitions that must move. Consumers that keep the same partitions can keep processing during the rebalance.
+                        Typical flow:
+                          Revocation phase: only partitions being reassigned are revoked.
+                          Assignment phase: those partitions are assigned to their new owners.
+                          Consumers that were not impacted never stopped.
+                        You enable it by setting:
+                        partition.assignment.strategy=org.apache.kafka.clients.consumer.CooperativeStickyAssignor
                   - queue broker 
                     - broker removal by creating a new parition plan and shifting replicas to available brokers and 
                     - broker addition by adding some replicas and remove them from existing brokers to split the load
               - At most once, Atleast once and Exactly once
               - Message filtering using tags 
               - Delayed and scheduled messages (temporarily storage)
+                - delayed topics of topics-5m, topics-1m
+                - kafka + hieararchial time wheel 
+                  every tick it process each level and execute the tasks
+                    Level 0: seconds (60 slots)
+                    Level 1: minutes (60 slots)
+                    Level 2: hours (24 slots)
               - Retry : failed consumed messages could be retried through dedicated Retry topic 
+              - Messaging ordering : Kafka only gives message ordering within the partition since it supports linearizable writes to leader partition with in sync replicas ( you can sek ACK=all)
+              - Zero copy principle
+                - Avoids disk -> kernel -> user -> kernel -> NIC
+                - Instead disk/pagecache -> NIC which is huge CPU savings 
+              - Backpressure
+                option A - retain backlog. Kafka uses this approach 
+                option B - throttle producers 
+              - Flow control
+                - socket buffer limits 
+                - broker and topic quotas 
+              - Network optimization
+                - epoll/kqueue
+                - binary protocol
+                - batching
+                - compression : zstd, lz4, snappy, gzip as order of compression with tradeoff on cpu vs network/storage
+              - Hot paritition problem 
+                - salting for hot parition is common approach to distribute across but consumer now has to subscribe to other partitions. Also loose ordering. 
+                - virtual replicas like in consistent hashing to distribute across but same problem as above and plus it does not guaranteed to solve hot partition problem 
+              - Efficiency at kernel-level
+                - Avoid page cache thrashing with huge pages 
+                  - -XX:+UseLargePages
+                - NUMA awareness by pinning
+                  - numactl --cpunodebind=0 --membind=0
+                  - Java: -XX:+UseNUMA
+                - Network tunning 
+                  - increase socket buffers due to large streaming messages 
+                    net.core.rmem_max
+                    net.core.wmem_max
+                - NIC Affinity by pinning 
+                    - When a network interface card (NIC) receives packets, the hardware raises an interrupt (IRQ). The CPU that handles that interrupt runs the driver’s top-half ISR (interrupt service routine), which typically schedules further work (NAPI polling, softirq, eventually your app’s read()/recv()). Affinity means: which CPU(s) are allowed to run that interrupt handler.Pinning means you fix that IRQ to one specific CPU instead of letting the kernel move it around.
+                    So When packet processing hops CPUs, you pay extra cost:
+                      Cache misses — packet buffers and socket state aren’t in that core’s L1/L2 cache
+                      Cache line bouncing — metadata ping-pongs between cores
+                      Less predictable latency — bad for tail latency on hot paths (Kafka brokers, trading, gaming servers, etc.)
+                    The goal of pinning is: IRQ → same CPU → (ideally) app thread on same CPU so the hot path stays cache-local.
+                    echo 2 > /proc/irq/123/smp_affinity
+                - Disk scheduler tuning 
+                  - If NVMe, none or prefer mq-deadline 
+                    On Linux, the I/O scheduler (also called the elevator or queue discipline) sits between block I/O requests and the device driver. It can merge, reorder, and prioritize reads/writes before they hit the disk. Historically that mattered a lot for rotating HDDs and early SSDs. On NVMe, the hardware and driver are so fast that a heavy scheduler often adds latency for little gain.
+                     - none is not “no scheduling at all”; it means the kernel does little extra reordering because NVMe has many parallel queues and very low seek cost (there is no seek).
+                     - mq-deadline is the multi-queue version of the older deadline scheduler. It keeps read/write expiration times so one stream of I/O cannot starve another forever useful when you mix latency-sensitive and bulk traffic on the same disk.
+                - io_uring 
+                  - traditional linux IO 
+                      application
+                        -> syscall
+                      kernel work
+                        -> wakeup
+                      application resumes
+                  - io_uring is async I/O at kernel level in modern linux with 5.14+
+                    - using job submission and completion queues as buffers 
+                      submit 100 writes together
+                      kernel processes async
+                      collect completions later
+
+
             16. Metrics Monitoring and Alerting System
               - Data model : timestamp, value, set of <key,value> labels 
               - line protocal which is used in Prometheus, OpenTSDB
