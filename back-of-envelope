@@ -1034,7 +1034,15 @@ Time to understand scalability, latency aspects
               - Visualization system - Grafana as open source
               - One common question is when to use Timeseries DB vs Clickhouse 
                 - TimeSeriesDB : specialized for metrics over time (ingest, retention, series, monitoring) + in built alerting support 
+                  - Time series DB is built for this shape:
+                      (timestamp, metric_name, {labels}) → single numeric value
+                      Example -  cpu_usage{host="A", region="us"} = 72.3
+                      Optimized for: many series, high write rate, alerting, rollups, short-query patterns.
                 - ClickhouseDB : specialized for fast analytical queries on huge datasets with many dimensions and high cardinalities; it can store time-ordered data but you build the “time series semantics” (rollups, cardinality discipline, alerting) yourself. Also clickhouse have in-built aggregation support with MV
+                  ClickHouse is built for this shape:
+                    (timestamp, col1, col2, col3, ..., colN) → wide event row
+                    Example - (ts, ad_id, user_id, country, device, bid_price, ...)
+                    Optimized for: arbitrary SQL, JOINs, large scans, analytics over rich events.
             17. Ad Click Event Aggregation
               - Data model
                 - star schema (fact table storing denormalized form and dimension table derived from fact for Aggregated data. To avoid indexing on every column on dimension table, Use filter id technique to further have faster retrieval)
