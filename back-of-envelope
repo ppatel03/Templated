@@ -1075,19 +1075,70 @@ Time to understand scalability, latency aspects
                     Example - (ts, ad_id, user_id, country, device, bid_price, ...)
                     Optimized for: arbitrary SQL, JOINs, large scans, analytics over rich events.
             17. Ad Click Event Aggregation
+              https://chatgpt.com/c/6a0ac674-a36c-83e8-9992-0d958a1ecfac 
               - Data model
                 - star schema (fact table storing denormalized form and dimension table derived from fact for Aggregated data. To avoid indexing on every column on dimension table, Use filter id technique to further have faster retrieval)
               - Keep Raw incoming data 
-              - DB : Cassandra 
+              - DB : Cassandra or for Advanced in built pre-aggregation, use Clickhouse
               - High level design 
-                  Logs/collection source -> Producer -> Queue -> Consumer aggregation (map reduce job) -> DB -> Query Service 
+                            SDKs / Mobile / Web
+                                    |
+                                    v
+                            +------------------+
+                            | API Gateway/LB   |
+                            +------------------+
+                                    |
+                                    v
+                            +------------------+
+                            | Kafka / Pulsar   |
+                            +------------------+
+                                    |
+                                    +----------------------+
+                                    |                      |
+                                    v                      v
+                            +---------------+      +----------------+
+                            | Flink Stream  |      | Raw Data Lake  |
+                            | Aggregations  |      | S3/HDFS        |
+                            +---------------+      +----------------+
+                                    |
+                                    v
+                            +----------------------+
+                            | Real-time OLAP Store |
+                            | Druid/Pinot/ClickHouse|
+                            +----------------------+
+                                    |
+                                    v
+                            +----------------------+
+                            | Query API + Dashboard|
+                            +----------------------+ 
               - Streaming vs Batching (use both : Kappa architecture like Flink) 
               - Data recalculation using raw DB or Queue 
               - Time : event time vs processing time. Use event time but know the gap = processing - event time. 
               - Watermarking : use the above gap as extended interval 
               - Tumbling window vs Sliding window 
               - Delivery guarantee (exactly once using offset id and storing it only when Aggregator saves in DB)
-              - Scaling : Aggregator using consumer rebalancing, Map reduce using YARN, Cassandra supports consistent hashing
+                  - Two-Phase Commit Sink in Flink to ensure exactly once processing
+
+                  - Flink sink lifecycle:
+                      beginTransaction()
+                      write()
+                      preCommit()
+                      checkpoint success
+                      commit()
+
+                    If failure:
+                      abort()
+
+                  Classic distributed transaction style.
+                  - What if there is faiure after "checkpoint success" and before " commit()" ? 
+                    - When checkpoint succeeds, Flink persists the transaction handle (e.g. Kafka transaction ID, DB transaction token) inside the checkpoint state itself.
+                    - On recovery from failure:
+                        Flink restores checkpoint
+                        → sees "transaction X was pre-committed but not yet committed"
+                        → calls commit(X) again
+
+
+              - Scaling : Aggregator using consumer rebalancing(cooperative rebalancing), Map reduce using YARN, Cassandra supports consistent hashing
               - Fault tolerant : use checkpoint barriers like in Flink to store the snapshot 
               - Others - Data monitoring (Queue size, latency, CPU/RAM), Reconcialiation 
             18. Hotel Reservation System
