@@ -1139,7 +1139,22 @@ Time to understand scalability, latency aspects
               - For top clicked Ads, use efficienct heavy-hitter alogs like count-min sketch or top-k heaps instead of exact counts.
               - For approx distinct counts, use probalistic algo like Hyperloglog
               - Scaling : Aggregator using consumer rebalancing(cooperative rebalancing), Map reduce using YARN, Cassandra supports consistent hashing
-              - Hot parition : salting or adpative paritioning
+              - Hot parition : salting or adpative paritioning like in Kafka Streams or Flink
+                - Difference between Kafka, Kafka streams and Flink 
+                  - Kafka = distributed log; you must write processing code yourself.
+                  - Kafka Streams = library you add to your Java app; runs inside your process, uses Kafka for everything.
+                          StreamsBuilder builder = new StreamsBuilder();
+                          KStream<String, Click> clicks = builder.stream("clicks");
+                          clicks
+                            .selectKey((k, click) -> click.getUserId())  // change key to userId
+                            .groupByKey()                                 // repartition by userId, automatically handles re-paritioning 
+                            .windowedBy(TimeWindows.of(Duration.ofMinutes(5)))
+                            .count()
+                            .toStream()
+                            .to("click-counts-output");
+                          KafkaStreams streams = new KafkaStreams(builder.build(), config);
+                          streams.start();  // runs in THIS JVM process
+                  - Flink = separate cluster you deploy; you submit jobs to it, it reads from Kafka but manages its own processing/state.
               - Fault tolerant : use checkpoint barriers like in Flink to store the snapshot 
               - Others - Data monitoring (Queue size, latency, CPU/RAM), Reconcialiation 
             18. Hotel Reservation System
