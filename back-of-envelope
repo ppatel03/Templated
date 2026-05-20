@@ -1136,7 +1136,8 @@ Time to understand scalability, latency aspects
                         Flink restores checkpoint
                         → sees "transaction X was pre-committed but not yet committed"
                         → calls commit(X) again
-
+              - For top clicked Ads, use efficienct heavy-hitter alogs like count-min sketch or top-k heaps instead of exact counts.
+              - For approx distinct counts, use probalistic algo like Hyperloglog
 
               - Scaling : Aggregator using consumer rebalancing(cooperative rebalancing), Map reduce using YARN, Cassandra supports consistent hashing
               - Fault tolerant : use checkpoint barriers like in Flink to store the snapshot 
@@ -2320,39 +2321,47 @@ Distributed best practices
     HyperLogLog: Counting unique queries performed by users in a search.
       - https://chatgpt.com/c/69a5ff3f-c94c-832d-be17-59255cc73e32
        - HyperLogLog estimates the number of distinct elements using probability, not exact storage.
-
               Instead of storing all unique values, it:
-
-              Hashes each element (e.g., user ID)
-
-              Looks at how many leading zeros appear in the hash
-
-              Uses that to estimate cardinality
+              - Hashes each element (e.g., user ID)
+              - Looks at how many leading zeros appear in the hash
+              - Uses that to estimate cardinality
 
               Why leading zeros?
+                - If you randomly hash numbers:
+                  - 1 in 2 hashes start with 0
+                  - 1 in 4 start with 00
+                  - 1 in 8 start with 000
+                  - 1 in 16 start with 0000
+                If you observe a hash with 10 leading zeros, you probably saw around 2¹⁰ ≈ 1024 distinct values.`
 
-              If you randomly hash numbers:
+            The problem with just max leading zeros : 
+              Too noisy. One unlucky hash with many leading zeros wildly inflates the estimate.
 
-              1 in 2 hashes start with 0
+          HyperLogLog fix: split into many buckets and average.
 
-              1 in 4 start with 00
+          Full algorithm
+            1. Hash each element → uniform random bits
+            2. Use first b bits as a bucket index (with m = 2^b buckets, typically 2^14 = 16384)
+                hash = [bucket_bits | remaining_bits]
+                        first b bits → which bucket
+                                          rest → count leading zeros
+            3. In each bucket, track max leading zeros seen
 
-              1 in 8 start with 000
+              bucket[0] = 7   (max leading zeros seen for elements routed here)
+              bucket[1] = 3
+              bucket[2] = 12
+              ...
+              bucket[m] = 5
+            4. Estimate cardinality using harmonic mean of all buckets:
 
-              1 in 16 start with 0000
-
-              If you observe a hash with 10 leading zeros, you probably saw around 2¹⁰ ≈ 1024 distinct values.
+                estimate = α * m² * (1 / Σ(2^(-bucket[i])))
+            The harmonic mean makes it robust against outlier buckets. α is a small bias correction constant.
 
               Real-World Systems Using HLL
-
                 Redis (PFADD, PFCOUNT)
-
                 Apache Spark (approx_count_distinct)
-
                 Presto
-
                 Apache Druid
-
                 Google BigQuery
 
     Consistent Hashing: Used for efficient data distribution between the cluster’s nodes.
