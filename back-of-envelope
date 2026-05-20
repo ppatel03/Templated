@@ -1138,8 +1138,8 @@ Time to understand scalability, latency aspects
                         → calls commit(X) again
               - For top clicked Ads, use efficienct heavy-hitter alogs like count-min sketch or top-k heaps instead of exact counts.
               - For approx distinct counts, use probalistic algo like Hyperloglog
-
               - Scaling : Aggregator using consumer rebalancing(cooperative rebalancing), Map reduce using YARN, Cassandra supports consistent hashing
+              - Hot parition : salting or adpative paritioning
               - Fault tolerant : use checkpoint barriers like in Flink to store the snapshot 
               - Others - Data monitoring (Queue size, latency, CPU/RAM), Reconcialiation 
             18. Hotel Reservation System
@@ -1723,8 +1723,10 @@ Time to understand scalability, latency aspects
                           This is why analytical DBs love bitmap encoding.
 
                       - Difference vs Dictionary Encoding
+                        Dictionary encoding first converts strings to small sequential integers. 
 
                           Often bitmap encoding is used with dictionary encoding:
+                            - making bitmap construction faster (integer vs string comparison), queries faster (array index vs hash lookup), and compression better (sequential ID space).
 
                           Step 1: Dictionary encode values
                             Active → 0
@@ -1732,6 +1734,13 @@ Time to understand scalability, latency aspects
                             Pending → 2
 
                           Step 2: Build bitmap per dictionary ID.
+                          Column: Status
+                                  ├── Dictionary:  [Active, Inactive, Pending]
+                                  ├── Data page:   [0, 1, 0, 2, 0, ...]   ← encoded as 2-bit ints
+                                  └── Bitmap index:
+                                        id=0:  1010100110...   (Active rows)
+                                        id=1:  0100010001...   (Inactive rows)
+                                        id=2:  0001001000...   (Pending rows)
 
                           Most modern columnar engines combine:
 
