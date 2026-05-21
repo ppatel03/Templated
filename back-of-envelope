@@ -5206,7 +5206,7 @@ Distributed systems today and Benchmarking on common systems
             - Memory (Flink wins)
               - Spark faces OOM due to its in-memory nodes wherease Flink can take help of disks
         
-         - Difference between  Kafka, Kafka streams, Flink and Spark
+        10.  Difference between  Kafka, Kafka streams, Flink and Spark
                   - Kafka = distributed log; you must write processing code yourself.
                   - Kafka Streams = library you add to your Java app; runs inside your process, uses Kafka for everything.
                           StreamsBuilder builder = new StreamsBuilder();
@@ -5341,7 +5341,30 @@ Distributed systems today and Benchmarking on common systems
                                   Wait for all tasks...
 
                           Overhead per batch: 1-5 seconds
+
+        10. Difference between Hive, Iceberg and Airflow 
+            Airflow =  scheduler that decides when to run your pipelines. Think of it like DAG management.
+              - Example Airflow orchestrates a pipeline that writes to Iceberg:
+
+                  ┌──────────────────────────────────────┐
+                  │ Airflow DAG (scheduled daily 2am)    │
+                  │                                      │
+                  │  Task 1: Extract from API            │
+                  │     ↓                                │
+                  │  Task 2: Spark job transforms data   │
+                  │     ↓                                │
+                  │  Task 3: Write to Iceberg table ────┼──► s3://lake/events (Iceberg)
+                  │     ↓                                │
+                  │  Task 4: Run quality checks          │
+                  │     ↓                                │
+                  │  Task 5: Update dashboard            │
+                  └──────────────────────────────────────┘
+
+            Hive = old data warehouse system with query engine + metadata store on top of Hadoop (s3); Hive tables are being replaced by Trino/Presto as query engine and Iceberg as table metastore to support ACID.
+
+            Iceberg = modern table format that makes data lakes act like databases (ACID, time travel, schema evolution); replaces Hive table format while keeping SQL queries.   
               
+
         11. Google Cloud Spanner
             https://research.google/pubs/pub39966/
             Spanner is Google's scalable, multi-version, globally-distributed, and synchronously-replicated database. It is the first system to distribute data at global scale and support externally-consistent distributed transactions.
