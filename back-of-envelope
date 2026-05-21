@@ -1115,7 +1115,7 @@ Time to understand scalability, latency aspects
               - Data recalculation using raw DB or Queue 
               - Time : event time vs processing time. Use event time but know the gap = processing - event time. 
               - Watermarking : use the above gap as extended interval 
-              - Tumbling window vs Sliding window 
+              - Tumbling window vs Sliding window vs Session window ( user sessions used for attribution, funnel analysis)
               - Delivery guarantee (exactly once using offset id and storing it only when Aggregator saves in DB)
                   - Two-Phase Commit Sink in Flink to ensure exactly once processing
 
@@ -1140,7 +1140,7 @@ Time to understand scalability, latency aspects
               - For approx distinct counts, use probalistic algo like Hyperloglog
               - Scaling : Aggregator using consumer rebalancing(cooperative rebalancing), Map reduce using YARN, Cassandra supports consistent hashing
               - Hot parition : salting or adpative paritioning like in Kafka Streams or Flink
-                - Difference between Kafka, Kafka streams and Flink 
+                - Difference between  Kafka, Kafka streams, Flink and Spark
                   - Kafka = distributed log; you must write processing code yourself.
                   - Kafka Streams = library you add to your Java app; runs inside your process, uses Kafka for everything.
                           StreamsBuilder builder = new StreamsBuilder();
@@ -1155,6 +1155,51 @@ Time to understand scalability, latency aspects
                           KafkaStreams streams = new KafkaStreams(builder.build(), config);
                           streams.start();  // runs in THIS JVM process
                   - Flink = separate cluster you deploy; you submit jobs to it, it reads from Kafka but manages its own processing/state.
+                        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+                        DataStream<Click> clicks = env
+                          .addSource(new FlinkKafkaConsumer<>("clicks", ...));
+
+                        clicks
+                          .keyBy(click -> click.getUserId())            // Flink shuffles over network
+                          .timeWindow(Time.minutes(5))
+                          .sum("count")
+                          .addSink(new FlinkKafkaProducer<>("click-counts-output", ...));
+
+                        env.execute("Click Counter Job");  // Submit to Flink cluster
+                      - Flink cluster 
+                          Flink Cluster (separate infrastructure):
+
+                          JobManager:       manages jobs, coordinates
+                          TaskManager 1:    worker node
+                          TaskManager 2:    worker node
+                          TaskManager 3:    worker node
+
+                          You submit your job JAR to the cluster:
+                          $ flink run -c ClickCounter myapp.jar
+                      - Flink Cluster behind the scenes :
+                          JobManager (coordinator)
+                            └── Submits tasks to TaskManagers
+
+                          TaskManager 1:
+                            - Slot 1: reads Kafka partitions 0,1
+                            - Slot 2: aggregates userIds A-M
+
+                          TaskManager 2:
+                            - Slot 3: reads Kafka partitions 2,3
+                            - Slot 4: aggregates userIds N-Z
+
+                          TaskManager 3:
+                            - Slot 5: reads Kafka partitions 4,5
+                            - Slot 6: writes to output Kafka topic
+                            
+
+                          Network shuffle between slots:
+                            Slot 1 ──► hash(userId) ──► sends to Slot 2 or Slot 4
+                            Slot 3 ──► hash(userId) ──► sends to Slot 2 or Slot 4
+                            
+                          State stored in TaskManager memory + RocksDB + snapshots
+                - Spark : has microbatching
+
               - Fault tolerant : use checkpoint barriers like in Flink to store the snapshot 
               - Others - Data monitoring (Queue size, latency, CPU/RAM), Reconcialiation 
             18. Hotel Reservation System
@@ -5160,6 +5205,142 @@ Distributed systems today and Benchmarking on common systems
               - Flink is made for real-time processing with 2x performance as compared to Spark
             - Memory (Flink wins)
               - Spark faces OOM due to its in-memory nodes wherease Flink can take help of disks
+        
+         - Difference between  Kafka, Kafka streams, Flink and Spark
+                  - Kafka = distributed log; you must write processing code yourself.
+                  - Kafka Streams = library you add to your Java app; runs inside your process, uses Kafka for everything.
+                          StreamsBuilder builder = new StreamsBuilder();
+                          KStream<String, Click> clicks = builder.stream("clicks");
+                          clicks
+                            .selectKey((k, click) -> click.getUserId())  // change key to userId
+                            .groupByKey()                                 // repartition by userId, automatically handles re-paritioning 
+                            .windowedBy(TimeWindows.of(Duration.ofMinutes(5)))
+                            .count()
+                            .toStream()
+                            .to("click-counts-output");
+                          KafkaStreams streams = new KafkaStreams(builder.build(), config);
+                          streams.start();  // runs in THIS JVM process
+                  - Flink = separate cluster you deploy; you submit jobs to it, it reads from Kafka but manages its own processing/state. If you need low latency (< 1 second), use Flink.
+                        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+                        DataStream<Click> clicks = env
+                          .addSource(new FlinkKafkaConsumer<>("clicks", ...));
+
+                        clicks
+                          .keyBy(click -> click.getUserId())            // Flink shuffles over network
+                          .timeWindow(Time.minutes(5))
+                          .sum("count")
+                          .addSink(new FlinkKafkaProducer<>("click-counts-output", ...));
+
+                        env.execute("Click Counter Job");  // Submit to Flink cluster
+                      - Flink cluster 
+                          Flink Cluster (separate infrastructure):
+
+                          JobManager:       manages jobs, coordinates
+                          TaskManager 1:    worker node
+                          TaskManager 2:    worker node
+                          TaskManager 3:    worker node
+
+                          You submit your job JAR to the cluster:
+                          $ flink run -c ClickCounter myapp.jar
+                      - Flink Cluster behind the scenes :
+                          JobManager (coordinator)
+                            └── Submits tasks to TaskManagers
+
+                          TaskManager 1:
+                            - Slot 1: reads Kafka partitions 0,1
+                            - Slot 2: aggregates userIds A-M
+
+                          TaskManager 2:
+                            - Slot 3: reads Kafka partitions 2,3
+                            - Slot 4: aggregates userIds N-Z
+
+                          TaskManager 3:
+                            - Slot 5: reads Kafka partitions 4,5
+                            - Slot 6: writes to output Kafka topic
+                            
+
+                          Network shuffle between slots:
+                            Slot 1 ──► hash(userId) ──► sends to Slot 2 or Slot 4
+                            Slot 3 ──► hash(userId) ──► sends to Slot 2 or Slot 4
+                            
+                          State stored in TaskManager memory + RocksDB + snapshots
+                      - Remember State update in RocksDB/Memory is different from checkpoint store (for exactly once processing) and sink DBs ( updated after time window 5 mins in this example)
+                      - Updates : 
+                          1) state in memory or RocksDB is updated continously 
+                          2) checkpoint updates periodically based on checkpoint barriers 
+                          3) DB update is done after time window ( 5 mins in this example)
+                      - Visual representation of above explaination in Flink 
+                          Time ────────────────────────────────────────────────►
+
+                          State updates: ●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●
+                          (every record)  ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑
+
+                          Checkpoints:    ─────────────✓─────────────✓────────
+                          (every 5mins)            snapshot      snapshot
+
+                          DB Update :    ─────────────✓─────────────✓────────
+                          (every 5mins)            update      update
+                - Spark Streaming : has microbatching.  If 5-10 second latency is fine and you want simpler ops or already use Spark for batch, use Spark Streaming.
+                    val spark = SparkSession.builder()...
+
+                    val clicks = spark
+                      .readStream
+                      .format("kafka")
+                      .option("subscribe", "clicks")
+                      .load()
+
+                    clicks
+                      .withWatermark("timestamp", "5 minutes")
+                      .groupBy(
+                        window($"timestamp", "5 minutes"),
+                        $"userId"
+                      )
+                      .count()
+                      .writeStream
+                      .format("kafka")
+                      .option("topic", "output")
+                      .outputMode("update")
+                      .trigger(Trigger.ProcessingTime("10 seconds"))  // ← KEY DIFFERENCE
+                      .start()
+                  - What Spark does 
+                      Records accumulated in micro-batches:
+
+                      Batch 1 (0-10s):  Collect all clicks from Kafka
+                                        Process entire batch as one unit
+                                        Update state for all users in batch
+                                        Write results
+                                        
+                      Wait 10 seconds...
+
+                      Batch 2 (10-20s): Collect next batch of clicks
+                                        Process entire batch
+                                        Update state
+                                        Write results
+
+                      Processing: batch-by-batch
+                      State updates: once per batch (every 10s)
+                      Output: once per batch
+                  - Why can't Spark do continuous streaming?
+                      This is architectural, not just a config change. Driver plans each batch, becomes bottleneck at high frequency
+                        - Driver creates execution plan (DAG)
+                                    ↓
+                                  Shuffle/materialize stages
+                                    ↓
+                                  Executors run tasks
+                                    ↓
+                                  Collect results
+                                    ↓
+                                  WAIT for next batch
+                                    ↓
+                                  Repeat
+                        - This means 
+                          Batch 1: Plan → Schedule 1000 tasks → Execute → Write shuffle → Barrier
+                                  Wait for all tasks...
+                                  
+                          Batch 2: Plan → Schedule 1000 tasks → Execute → Write shuffle → Barrier
+                                  Wait for all tasks...
+
+                          Overhead per batch: 1-5 seconds
               
         11. Google Cloud Spanner
             https://research.google/pubs/pub39966/
