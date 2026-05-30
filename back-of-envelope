@@ -5343,7 +5343,7 @@ Distributed systems today and Benchmarking on common systems
                           Overhead per batch: 1-5 seconds
 
         10. Difference between Hive, Iceberg and Airflow 
-            Airflow =  scheduler that decides when to run your pipelines. Think of it like DAG management.
+          - Airflow =  scheduler that decides when to run your pipelines. Think of it like DAG management.
               - Example Airflow orchestrates a pipeline that writes to Iceberg:
 
                   ┌──────────────────────────────────────┐
@@ -5360,9 +5360,144 @@ Distributed systems today and Benchmarking on common systems
                   │  Task 5: Update dashboard            │
                   └──────────────────────────────────────┘
 
-            Hive = old data warehouse system with query engine + metadata store on top of Hadoop (s3); Hive tables are being replaced by Trino/Presto as query engine and Iceberg as table metastore to support ACID.
+           -  Hive = old data warehouse system with query engine + metadata store on top of Hadoop (s3); Hive tables are being replaced by Trino/Presto as query engine and Iceberg as table metastore to support ACID.
+              - S3 bucket structure:
+                  s3://lake/warehouse/db/users/
+                    
+                    year=2026/                         ← Partition directory
+                      month=05/                        ← Sub-partition
+                        part-0000.parquet             ← Data file
+                        part-0001.parquet
+                        
+                    year=2026/
+                      month=06/
+                        part-0000.parquet
 
-            Iceberg = modern table format that makes data lakes act like databases (ACID, time travel, schema evolution); replaces Hive table format while keeping SQL queries.   
+                  Separate metastore in (MySQL/Postgres):
+                    Table: users
+                    Location: s3://lake/warehouse/db/users/
+                    Partitions: year=2026/month=05, year=2026/month=06
+                    Schema: id INT, name STRING, ...
+                    Format: Parquet
+
+                  Storage format: NONE (just files)
+                  Data format: Parquet/ORC (columnar)
+                  Organization: Directory structure + external metastore
+
+              - Why Hive cannot support ACID 
+                - The core problem: metadata architecture since Hive is external metastore = ACID is hard 
+                  - ┌─────────────────────────────────┐
+                    │ Hive Metastore (MySQL/Postgres) │  ← Separate service
+                    │   - Stores table schema         │
+                    │   - Stores partition info       │
+                    │   - NOT atomic with S3          │
+                    └────────┬────────────────────────┘
+                            │ "Table X has partitions A, B, C"
+                            ↓
+                    ┌─────────────────────────────────┐
+                    │ S3 Storage                      │
+                    │   year=2026/month=05/           │
+                    │     part-0001.parquet           │
+                    │     part-0002.parquet           │
+                    └─────────────────────────────────┘
+
+                    Problem: Two separate systems (metastore + S3)
+                      → No atomic updates across both
+                      → Metastore can be out of sync with S3
+
+                  - What goes wrong:
+                        Writer A:                          Writer B:
+                    1. Write file1.parquet to S3      1. Write file2.parquet to S3
+                    2. Update metastore               2. Update metastore (RACE!)
+                      ↓                                 ↓
+                      Both succeed, but:
+                      - Metastore might see only file1 or file2
+                      - Or partial state
+                      - No transaction isolation
+                      
+                    Result: CORRUPTED TABLE METADATA
+
+
+          - Iceberg = modern table format that makes data lakes act like databases (ACID, time travel, schema evolution); replaces Hive table format while keeping SQL queries. 
+              - Iceberg on S3
+                - S3 bucket structure:
+                    s3://lake/warehouse/db/users/
+                      
+                      data/                              ← Actual data (Parquet files)
+                        00000-0-abc123.parquet          ← Immutable file
+                        00001-0-def456.parquet          ← Immutable file
+                        00002-0-ghi789.parquet          ← Immutable file
+                        
+                      metadata/                          ← Iceberg metadata
+                        v1.metadata.json                ← Schema, snapshot list, partition spec
+                        v2.metadata.json                ← Updated metadata (new snapshot)
+                        snap-123.avro                   ← Snapshot: list of data files
+                        snap-124.avro
+                        manifest-list-xyz.avro          ← Points to manifests
+                        manifest-abc.avro               ← Lists data files in this snapshot
+
+                    Storage format: NONE (just files in object storage)
+                    Data format: Parquet (columnar, immutable)
+                    Organization: Metadata JSON/Avro tracks files
+
+                  - Each Parquet file internally:
+                    - Columnar format (column-oriented, not LSM/B-tree)
+                    - Row groups (chunks of rows)
+                    - Column chunks (data per column)
+                    - Footer with metadata (min/max stats per column)
+                    
+                  Parquet is:
+                    ❌ NOT LSM tree (no memtable, no levels, no compaction)
+                    ❌ NOT B-tree (no index structure, no pointer lookups)
+                    ✅ Just columnar blocks with metadata footer
+
+                  - How IceBerg can support ACID 
+                    - Self-contained metadata in S3:
+                        metadata/v2.metadata.json:
+                          {
+                            "format-version": 2,
+                            "table-uuid": "...",
+                            "current-snapshot-id": 124,
+                            "snapshots": [
+                              {"snapshot-id": 123, "manifest-list": "s3://.../manifest-list-123.avro"},
+                              {"snapshot-id": 124, "manifest-list": "s3://.../manifest-list-124.avro"}
+                            ],
+                            "schema": {...}
+                          }
+                        
+                        manifest-list-124.avro:
+                          [
+                            {"manifest-file": "s3://.../manifest-abc.avro", "partition": {...}},
+                            {"manifest-file": "s3://.../manifest-def.avro", "partition": {...}}
+                          ]
+                        
+                        manifest-abc.avro:
+                          [
+                            {"file-path": "s3://.../00000-0-abc.parquet", "record-count": 10000, ...},
+                            {"file-path": "s3://.../00001-0-def.parquet", "record-count": 8000, ...}
+                          ]
+
+                      - Benefits:
+                        - All metadata in S3 (atomic updates via versioned metadata.json)
+                        - ACID (optimistic concurrency, compare-and-swap on metadata)
+                        - File-level tracking (knows every data file)
+                        - Snapshots enable time travel
+
+                      - Example: 
+                        Writer A:                          Writer B:
+                      1. Read current v2.metadata.json  1. Read current v2.metadata.json
+                      2. Write file1.parquet            2. Write file2.parquet
+                      3. Create v3.metadata.json        3. Create v3.metadata.json
+                        (references file1)                (references file2)
+                      4. Atomic write:                  4. Atomic write:
+                        IF current = v2:                  IF current = v2:
+                          UPDATE to v3                      UPDATE to v3
+                        ELSE: FAIL (conflict)             ELSE: FAIL (conflict)
+
+                      First writer wins (atomic compare-and-swap)
+                      Second writer retries with v3 as base
+
+
               
 
         11. Google Cloud Spanner
