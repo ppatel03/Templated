@@ -655,6 +655,7 @@ Time to understand scalability, latency aspects
             - Online Presence/ Status Fan out 
             - Others - support media files, E2E Encryption, Improve Load time by multi-datacenter, Retry with Queue
           10. Design A Search Autocomplete System
+              https://chatgpt.com/g/g-p-698235e6d2ac8191b248a12be431269a-system/c/6a141532-5fc8-83e8-84e7-9b0567655215 
               - High level design (trie)
                   - option 1 : indexing on mysql 
                     - for example, get suggestions for "app"
@@ -721,11 +722,71 @@ Time to understand scalability, latency aspects
                   Client/Browser -> API Server -> Trie Cache -> Trie DB 
                                                                     
                   Analytics Logs -> Data parser -> Trie Builder (workers) -> update periodically to Trie DB
-
-              - Performance : Browser cache (header cache-control)
+              - Scale challenges 
+                - Memory explosion 10 TB 
+                - Pointer overhead ( cache misses, non vector ins simd friendly)
+                - Hot prefixes ( example a has millions of descendants)
+              - Scale solutions 
+                - Compressed Trie 
+                  (c -> a -> m -> e -> r -> a to "camera")
+                - TST ( Ternary search tree)
+                - FST used in lucene, solr, elasticsearch (Finite State Transducer)
+                  - Trie has duplicate suffix structures.
+                    running
+                    jogging
+                    walking
+                  So Instead of duplicate suffixes: creates i -> n -> g shared across words
+                  Also Transducer, edges can store and emit outputs 
+                - DAWG ( Directed Acyclic word graph)
+                - Hot key/prefix problem 
+                  - further divide a into aa-ac, ad-af etc. 
+                - LOUDS (Level-Order Unary Degree Sequence)
+                  - bit encoding of tries which is used in search engine + NLP 
+              - Further Performance : 
+                - Browser cache (header cache-control), 
+                - CDN caching
+                - mmap FST trie
               - Smart sharding based on historical queries for equal load partition
-              - Filter unwanted words 
+              - Security
+                - Abuse Prevention : Attacker can keep search for unwanted words. So Filter unwanted words to avoid getting indexed into trie
+                - Privacy : should not leak private searches ( example SSN)
               - Others - multi-criteria ranking, online update Vs offline batch update
+              - online update Vs offline batch update
+                - Lambda style ( TST trie from offline updates + online stream stored in redis cache --> merge --> rank)
+                  - Design
+                    - Retrieval  
+                          Keystroke
+                            |
+                            v
+                          FST Retrieval (top 500) from offline update 
+                            |
+                            v
+                          Realtime Merge from Redis cache populated from online streaming for recent hot words say ipl match 
+                            |
+                            v
+                          Feature Fetch
+                            |
+                            v
+                          Lightweight ML Ranker (GBDT/XGBoost - 20ms)
+                            |
+                            v
+                          Top 10 suggestions
+                      - Disadvantage : overhead in maintaining 2 processing paths 
+                - Kappa style ( combined path  --> rank)
+                   - Design (combined)
+                          Search Events
+                                |
+                                v
+                          Kafka
+                                |
+                                v
+                          Flink Stateful Processing
+                                |
+                                +----> realtime serving store
+                                |
+                                +----> periodic compacted snapshots
+                    - Disadvantage : expensive for huge historical recomputation 
+              - Typo tolerance ( Levenstein distance using edit-distance automaton)
           11. Design Youtube
               - High level design 
                 - Upload flow (Grokking)
