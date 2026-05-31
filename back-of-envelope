@@ -849,7 +849,7 @@ Time to understand scalability, latency aspects
 
                   - MySQL look up is expensive due to latitude and longitude indexes are expensive 
                   - Other techniques
-                      - use GeoHash (size of planet ~ 5K * 5K km ~ 5 * 10 ^3 ~ 10 ^ 4.  Each divides by 4. So total 6 level nested geohash = 4 ^ 6 = 4096 ) - Redis, Bing map, Lyft
+                      - use GeoHash (size of planet ~ 5K * 5K km ~ 5 * 10 ^3 ~ 10 ^ 4.  Each divides by 4. So total 6 level nested geohash = 4 ^ 6 = 4096 ) - Redis, Bing map, Lyft, Uber
                         - Pros 
                             - faster look up in computing and fetching business by geo hash 
                             - less operational overhead 
