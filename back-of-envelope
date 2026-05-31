@@ -2215,6 +2215,7 @@ Distributed Systems estimate
 
     L1/L2 cache = 1 ns
     L3 shared cache = 10 ns
+    Branch misprediction = 10 ns
     Memory call = 100 ns
     Mutex lock/unlock =	100 ns
     System call = 1 us
