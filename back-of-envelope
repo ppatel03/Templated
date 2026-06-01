@@ -849,52 +849,35 @@ Time to understand scalability, latency aspects
 
                   - MySQL look up is expensive due to latitude and longitude indexes are expensive 
                   - Other techniques
-                      - use GeoHash (size of planet ~ 5K * 5K km ~ 5 * 10 ^3 ~ 10 ^ 4.  Each divides by 4. So total 6 level nested geohash = 4 ^ 6 = 4096 ) - Redis, Bing map, Lyft, Uber
+                      1. use GeoHash (size of planet ~ 5K * 5K km ~ 5 * 10 ^3 ~ 10 ^ 4.  Each divides by 4. So total 6 level nested geohash = 4 ^ 6 = 4096 ) - Redis, Bing map, Lyft, Uber
+                        - How is user lat and long converted to geohash to search in geohash DB
+                          - simply by binary encoding + recursive division 
+                            - Example , say for lat = 37.4, long = -122.08
+                              - For latitdue 
+                                - Iteration 1: Is 37.422408 in [0, 90]? YES → bit = 1  New range: [0, 90]  
+                                - Iteration 2: Is 37.422408 in [45, 90]? NO → bit = 0  New range: [0, 45]
+                                ..
+                                ..
+                              - For longitude 
+                                - Iteration 1: Is -122.085608 in [-180, 0]? YES → bit = 0 New range: [-180, 0]
+                                - Iteration 2: Is -122.085608 in [-90, 0]? YES → bit = 0 New range: [-90, 0]
+                                ..
+                                ..
+                          - Then interleave these bits 
+                            Interleaved: lng lat lng lat lng lat lng lat ...
+                            Result:       0  1  0  0  0  1  1  1 ...
+                          - Then convert binary to base32 : say 929hvu  
                         - Pros 
                             - faster look up in computing and fetching business by geo hash 
                             - less operational overhead 
-                        - Cons 
+                        - Cons (not desirable for systems which needs accuracy)
                             - popular cities will have many business under same geohash
                             - boundary issues (closer business in different geohash. So go with shared prefix with an exception that equator divison has no shared prefix.)
-                      - use Quadtree (keep dividing into 4 quadrants till min number of business in each grid) - Yext
-                        It is in-memory structure, so performing the calculations
-                          - Each grid can store a maximal of 100 businesses
-                          - Number of leaf nodes = ~200 million / 100 = ~2 million
-                          - Number of internal nodes = 2 million * 1/3 = ~0.67 million. If you do not know why the number of internal nodes is one-third of the leaf nodes
-                          - Total memory requirement = 2 million * 832 bytes (store four coordinates to identify grid (x,y,width,height) + list of business ids) + 0.67 million * 64 bytes (store four coordinates to identify grid (x,y,width,height) + four pointers (4 byte addresses)) = ~1.71 GB
-                        - Pros 
-                            - solves popular cities problem of Geohash
-                            - avoids prefix based neighbour searches for not enough business in Geohash 
-                        - Cons 
-                           - in memory challenge and operational start up time to construct / update quad tree
-                            - Estimate of time taken on 3GHz cpu ~ 3 * 10 ^ 9 cpu cycles /s 
-                              - Balanced tree construction ~ c * n log n where c = # of cpu cycles per operation 
-                              - c = 100 ( add/sub/comparison takes 5-10 cycles + avl tree balancing ~40 + L1/L2 cache miss ~40 + branch misprediction ~15 )
-                              - so 100 * 2*10^6 * log base 2 (2*10^6) ~ 6 billion cycle ~ 6 s
-                      - Google S2 - Google Maps, Tinder
-                      - High level design 
-                          Browser/Client -> LB -> API Service -> Geo hash DB (redis)
-                                                              -> DB (business info)
-                      - How is user lat and long converted to geohash to search in geohash DB
-                        - simply by binary encoding + recursive division 
-                          - Example , say for lat = 37.4, long = -122.08
-                            - For latitdue 
-                              - Iteration 1: Is 37.422408 in [0, 90]? YES → bit = 1  New range: [0, 90]  
-                              - Iteration 2: Is 37.422408 in [45, 90]? NO → bit = 0  New range: [0, 45]
-                              ..
-                              ..
-                            - For longitude 
-                              - Iteration 1: Is -122.085608 in [-180, 0]? YES → bit = 0 New range: [-180, 0]
-                              - Iteration 2: Is -122.085608 in [-90, 0]? YES → bit = 0 New range: [-90, 0]
-                              ..
-                              ..
-                        - Then interleave these bits 
-                          Interleaved: lng lat lng lat lng lat lng lat ...
-                          Result:       0  1  0  0  0  1  1  1 ...
-                        - Then convert binary to base32 : say 929hvu  
-                      -  How is user lat and long is used to get quadtree leaf to get say 100 nearby businesses
-                        - Example , say for lat = 37.9, long = -122.8
-                          -                     [Root: Entire World]
+                      2. use Quadtree (keep dividing into 4 quadrants till min number of business in each grid) - Yext
+                        - It is in-memory structure, so performing the calculations
+                        - How is user lat and long is used to get quadtree leaf to get say 100 nearby businesses
+                          - Example , say for lat = 37.9, long = -122.8
+                            -                  [Root: Entire World]
                                                   Bounds: (-90 to 90, -180 to 180)
                                                   Mid: (0°, 0°)
                                                   User: (37.42, -122.08)
@@ -929,24 +912,47 @@ Time to understand scalability, latency aspects
                                                   │ Businesses: │
                                                   │ [id1, id2...]│
                                                   └─────────────┘
-                   -  How is user lat and long is used to store and search in S2 ?
-                        https://chatgpt.com/c/69a5ff3f-c94c-832d-be17-59255cc73e32 
-                        - Challenge with Quad Tree 
-                          - Quadtree divides latitude and longitude evenly. But Earth curvature causes: 
-                            1) Near poles:  Longitudes converge and thus Cells represent much smaller real surface area
-                            2) Near equator: Cells represent larger surface area. So cell “square” in lat/lon is NOT square on Earth.
-                            That causes: Uneven real-world area per cell leading Uneven data distribution
-                          Why This Is Bad for Distributed Systems : Cells near poles are huge in count(lat/lon) but almost empty vs Cells near cities which are dense. Now your shards become imbalanced 
-                        - Challenge with Geohash  
-                          - Same as above on polar distortion 
-                          - Boundary problem
-                        - How Google S2 soves to avoid distortion ? 
-                        Step 1 — Wrap sphere in cube : Imagine Earth inside a cube. Now you have 6 faces.
-                        Step 2 — Project sphere onto cube faces : Each face becomes a square.
-                        Step 3 — Apply quadtree per face: Each face subdivides recursively.
-                        Step 4 — Encode as 64-bit ID : ID encodes Face number, Position in quadtree and Level
-                      - Why This Avoids Distortion ? 
-                        - Because: Subdivision happens on cube faces. Projection is designed to minimize distortion and Cells are more uniform in surface area. So Polar regions do not shrink weirdly. Area difference is much smaller than Geohash.
+                        - Each grid can store a maximal of 100 businesses
+                        - Number of leaf nodes = ~200 million / 100 = ~2 million
+                        - Number of internal nodes = 2 million * 1/3 = ~0.67 million. If you do not know why the number of internal nodes is one-third of the leaf nodes
+                        - Total memory requirement = 2 million * 832 bytes (store four coordinates to identify grid (x,y,width,height) + list of business ids) + 0.67 million * 64 bytes (store four coordinates to identify grid (x,y,width,height) + four pointers (4 byte addresses)) = ~1.71 GB
+                        - Pros 
+                            - solves popular cities problem of Geohash
+                            - avoids prefix based neighbour searches for not enough business in Geohash 
+                        - Cons ( not desirable for systems with lots of location updates like uber driver)
+                          - in memory challenge and operational start up time to construct / update quad tree
+                            - Estimate of time taken on 3GHz cpu ~ 3 * 10 ^ 9 cpu cycles /s 
+                              - Balanced tree construction ~ c * n log n where c = # of cpu cycles per operation 
+                              - c = 100 ( add/sub/comparison takes 5-10 cycles + avl tree balancing ~40 + L1/L2 cache miss ~40 + branch misprediction ~15 )
+                              - so 100 * 2*10^6 * log base 2 (2*10^6) ~ 6 billion cycle ~ 6 s
+                          - Large look up time to go recursive pointer especially for dense cities like Manhattan ( depth of 15+)
+                          - Expensive since it can cause tree splitting when more businesses are added
+                      3. Google S2 - Google Maps, Tinder
+                       -  How is user lat and long is used to store and search in S2 ?
+                          https://chatgpt.com/c/69a5ff3f-c94c-832d-be17-59255cc73e32 
+                          - Challenge with Quad Tree 
+                            - Quadtree divides latitude and longitude evenly. But Earth curvature causes: 
+                              1) Near poles:  Longitudes converge and thus Cells represent much smaller real surface area
+                              2) Near equator: Cells represent larger surface area. So cell “square” in lat/lon is NOT square on Earth.
+                              That causes: Uneven real-world area per cell leading Uneven data distribution
+                            Why This Is Bad for Distributed Systems : Cells near poles are huge in count(lat/lon) but almost empty vs Cells near cities which are dense. Now your shards become imbalanced 
+                          - Challenge with Geohash  
+                            - Same as above on polar distortion 
+                            - Boundary problem
+                          - How Google S2 soves to avoid distortion ? 
+                          Step 1 — Wrap sphere in cube : Imagine Earth inside a cube. Now you have 6 faces.
+                          Step 2 — Project sphere onto cube faces : Each face becomes a square.
+                          Step 3 — Apply quadtree per face: Each face subdivides recursively.
+                          Step 4 — Encode as 64-bit ID : ID encodes Face number, Position in quadtree and Level
+                        - Why This Avoids Distortion ? 
+                          - Because: Subdivision happens on cube faces. Projection is designed to minimize distortion and Cells are more uniform in surface area. So Polar regions do not shrink weirdly. Area difference is much smaller than Geohash.
+                      4. H3 used in Uber 
+              - High level design 
+                  Browser/Client -> LB -> API Service -> Geo hash DB (redis)
+                                                              -> DB (business info)
+                     
+                      
+                  
               - Data model
                   business info
                     business id -> location info (lat and long), name, etc.
