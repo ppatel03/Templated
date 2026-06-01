@@ -843,7 +843,7 @@ Time to understand scalability, latency aspects
                           - use decimal points instead of integers. This gives the opportunity to insert in between without changing the original indices. Example - 0.2, 0.4 and you insert something in between like 0.2, 0.3, 0.4 
                           {(H,0.1), (i, 0.5)} U insert {(i,0.2), (!,0.6)} = {(H,0.1), (i, 0.2), (i, 0.5), (!,0.6)}
             13. Proximity Service
-             
+              https://chatgpt.com/c/6a1bd606-1b70-83e8-8c17-1722c3debf42 
               - High level design
                   -  Browser/Client -> LB -> API Service -> DB
 
@@ -947,12 +947,21 @@ Time to understand scalability, latency aspects
                         - Why This Avoids Distortion ? 
                           - Because: Subdivision happens on cube faces. Projection is designed to minimize distortion and Cells are more uniform in surface area. So Polar regions do not shrink weirdly. Area difference is much smaller than Geohash.
                       4. H3 used in Uber 
+                        - H3 uses hexagons ( cells) because of better distributions where every cell has 6 neighbours 
+                        - For dense cities, there is higher resolutions of smaller hexagons 
+              - Production reality 
+                - Many companies combine both 
+                      H3 ( faster look up to the cell)
+                        +
+                      QuadTree inside hot cells ( helps in further splitting the cell)
               - High level design 
                   Browser/Client -> LB -> API Service -> Geo hash DB (redis)
                                                               -> DB (business info)
                      
                       
-                  
+              - Two phase query 
+                - phase 1 spatial look up to get 100-500 business from exact cell and neighbours
+                - phase 2 is radius filtering / sorting     
               - Data model
                   business info
                     business id -> location info (lat and long), name, etc.
@@ -961,6 +970,89 @@ Time to understand scalability, latency aspects
              
               - Sharding (not needed since entire dataset can fit in memory)
               - Performance - Multi data center set up
+              - Scaling to 1B businesses 
+                - storage : means each cell can contain 10M millions 
+                  - Approach 1 : Hiearchial cells (L8 L10 L12 L14) where then query planner chooses right level of the cell based on radius ( details in Dynamic Query planning)
+                      Level 0:  6 giant cells (cube faces covering Earth)
+                                ┌─────────────────┐
+                                │                 │
+                                │   Level 0       │
+                                │   (continent)   │
+                                └─────────────────┘
+
+                      Level 5:  Country-sized cells
+                                ┌────┬────┬────┬────┐
+                                │    │    │    │    │
+                                └────┴────┴────┴────┘
+
+                      Level 10: City-sized cells
+                                ┌─┬─┬─┬─┬─┬─┬─┬─┬─┐
+                                └─┴─┴─┴─┴─┴─┴─┴─┴─┘
+
+                      Level 15: Block-sized cells
+                                [████████████████████]  (very fine grid)
+
+                      Same global grid, just different zoom levels
+                  - Approach 2 : Shard by cell prefix 
+                  - Approach 3 : Hot cell splitting ( similar to bigtable split)
+                - query planner : if have small 100m cells, then querying for 500m radius means fetching 7 cells ( 1 target cell + 6 neighbours). But querying for 100km means fetching 50k+ cells, for 1000km means 50m+ cells. Its not scalable 
+                  - Solution : Dynamic Query Planning
+                    - Case 1 : ring expansion for small radius ( < 1km ). Keep expanding the neighbours till you get minimum number of businesses
+                    - Case 2 : cell covering for medium radius ( 100km ) 
+                      -  cell covering is finding the minimum set of cells that fully contain a search area. Instead of fetch too many small cells, fetch mix of cell sizes
+                    - Case 3 : use higher level cells for large radius ( 1000 km)
+                  - Alogrithm
+                    def find_nearby_drivers(lat, lon, radius_m):
+                        # DYNAMIC QUERY PLANNING
+                        
+                        if radius_m <= 500:
+                            # Small radius: ring expansion
+                            cell = h3.geo_to_h3(lat, lon, resolution=15)
+                            cells = [cell]
+                            cells += h3.k_ring(cell, 1)  # ring 1
+                            cells += h3.k_ring(cell, 2)  # ring 2
+                            # ~19 cells total
+                            
+                        elif radius_m <= 5000:
+                            # Medium radius: cell covering
+                            cells = compute_h3_covering(
+                                lat, lon, radius_m,
+                                min_level=10, max_level=13,
+                                max_cells=150
+                            )
+                            # ~150 cells
+                            
+                        else:
+                            # Large radius: coarse cells
+                            cells = compute_h3_covering(
+                                lat, lon, radius_m,
+                                min_level=5, max_level=8,
+                                max_cells=20
+                            )
+                            # ~20 large cells
+                        
+                        # Query geo index with chosen cells
+                        drivers = []
+                        for cell_id in cells:
+                            drivers += geo_index.get(cell_id)
+                        
+                        return drivers
+              - Location updates too frequently ( say uber driver )
+                - Imagine 5 M drivers with updates every 5s, which is 1M updates/s
+                - Streaming architecture
+                          Driver App
+                              |
+                        Kafka
+                              |
+                        Location Stream
+                              |
+                        Geo Aggregator
+                              |
+                        Geo Store
+                - Optimization : 
+                  1. updates only if cell changes for a driver. Rare if cell size is 1 km
+                  2. instead of tracking every update, track periodic update using latest location 
+                  3. Freeway drivers (65km/hr) which changes cell too frequency, update larger cells only instead of smaller cells 
               - Country with privacy laws (only route traffic to that country's datacenter)
             14. Nearby Friends  
                - Server based over peer to peer network
