@@ -1069,10 +1069,14 @@ Time to understand scalability, latency aspects
                                              DB (location history table and user_friends table)
 
                 - leverage redis pub sub
+                  - How It Works Internally 
+                    - Subscribing: When a client runs SUBSCRIBE news, Redis finds news in its internal channel dictionary (or creates it) and appends the client’s socket reference to that channel's linked list.
+                    - Publishing: When a client runs PUBLISH news "hello", Redis performs an \(O(1)\) lookup in the channel dictionary. It iterates through the linked list of subscribers and writes the message directly into each client's network output buffer.
+                    - No Storage: Once the message is written to the network buffers, Redis deletes the message from its memory
               - Periodic location update 
               - Data model
                   - user id -> lat, long 
-              - Why cache is needed ? - to store recent data with TTL
+              - Why cache is needed ? - to store recent data with TTL ( Cassandra supports it too)
               - Scaling 
                 - web socket, 
                 - user DB, 
