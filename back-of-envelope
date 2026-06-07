@@ -1084,8 +1084,13 @@ Time to understand scalability, latency aspects
                 - redis pub/sub lightweight 
                   -  How many servers 
                       - total is 10 million connections ( 1 million users * 10 friends) and 100B each connection and just 1 GB of memory. So its not memory bound. 
-                      - Worst case ~10 million updates per second, so its IO bound and with modern 1 Gbps network,   you need 100 servers for 10 million connections (10 million * 100B / 100MB and *10 due to unexpected bandwidth)
-                  - redis pub/sub server will use consistent hashing with zookeeper having its address, 
+                      - Worst case ~10 million updates per second, so its IO bound and with modern 100 Gbps (10 GBps) ENA network optimized instances,  you need just 3 servers for 10 million connections (10 million * 100B / 10 GB = 1 server and +2 server due to unexpected bandwidth)
+                  - redis pub/sub server will use consistent hashing with zookeeper having its address. 
+                    - redis also has in built "hash slot" algorithm or an application-side hash ring. Redis introduced Sharded Pub/Sub using SSUBSCRIBE and SPUBLISH. So there is a way where you do not have to rely on zookeeper for redis but management becomes hard 
+                      1. Cluster Handshake: A client connects to any node in the Redis Cluster.
+                      2. Cluster Topology: The Redis node returns the state of the cluster—a mapping of the 16384 slots to specific node IP addresses.
+                      3. Local Cache: The client caches this map locally to route subsequent messages to the correct shard.
+                      4. Automatic Redirection: If the cluster state changes (e.g., node additions/removals) and the client sends a message to the wrong node, Redis will reply with a MOVED or ASK error. The client then requests the updated topology and updates its local map.
                   - websocket servers register to the updates from zookeeper which stores the ring structure (example : node1, node2, node3, node 2, node 1, node 4) and hashfunction 
                   - websocket servers stores the all list of channel ids it subscribed to 
                   - using hashfunction and ring from zookeeper, it will know which redis pub sub server to talk too
