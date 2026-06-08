@@ -1142,10 +1142,8 @@ Time to understand scalability, latency aspects
 
               - Hotspot Problem
                 - Levi's Stadium where 50,000 users in one cell. Single shard melts.
-                - Solution : Cell splitting.
-                    - Level 10 becomes Level 11 automatically.
-                    - Adaptive hierarchy.
-                    - Exactly why S2/H3 hierarchy matters.
+                - Solution : Cell splitting. Example Level 10 becomes Level 11 automatically.
+                    - Possible with Adaptive hierarchy. Exactly why S2/H3 hierarchy matters.
                   
             15. Distributed Message Queue
               https://chatgpt.com/g/g-p-698235e6d2ac8191b248a12be431269a/c/6a0a5d28-d280-83e8-ac54-bf658914dea2 
