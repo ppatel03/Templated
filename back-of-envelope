@@ -1054,7 +1054,8 @@ Time to understand scalability, latency aspects
                   2. instead of tracking every update, track periodic update using latest location 
                   3. Freeway drivers (65km/hr) which changes cell too frequency, update larger cells only instead of smaller cells 
               - Country with privacy laws (only route traffic to that country's datacenter)
-            14. Nearby Friends  
+            14. Nearby Friends 
+              https://chatgpt.com/c/69fac8e0-0828-83e8-846d-83dee5640fa6  
                - Server based over peer to peer network
                 - P2P needs heavy client logic, high power consumption and flaky connections 
               - High level design 
@@ -1108,10 +1109,43 @@ Time to understand scalability, latency aspects
                   - User is by default subscribed to his/her friend's channel whether they are active or not. Saves the cost of new user joining the nearby service and having all his/her friend's subscribe to it.
               - Adding / removing friends is straightforward - just pass an event to subscribe/unsubscribe. So only 2 updates needed
               - User with many friends (not a problem since their friends channel would be distributed across)
-              - Nearby random persion (use geohash as the channel id to subscribe)
+              - Nearby random person (use geohash as the channel id to subscribe)
               - Alternative to Redis pub-sub 
                   - Erlang having lightweight process which uses Akka pattern and support 10 million active users
                   - Redis already uses epoll technique for I/O multiplexing. You can also perform similar epoll technique in your websocket API server which also uses persistent connection with redis pub-sub server 
+              - Alternative approaches of using location based channel id : The challenge with this redis pub-sub channel id based on friends is that any location updates would cause all subscribers have to consume the updates and calculate the distance 
+                  1. Use Geohash : so channel id would be geohash id and updates would only occur when user enter/leaves the channel. But Goehash has boundary problem since expanding geohash cell as a square means expanding to 9 neighbours and diagonal neighbours are often far from the center square. It does not fit well if the use case is finding within circular boundary
+                  2. H3 : this is hexagon cell with hieararchy since hexagon fit well with equal area and neighbour expansion. It is easy to updates at scale and used in uber, ride sharing systems. 
+                  3. S3 : To avoid distortion caused by Geohash, S2 projects earth onto cube and then each face of the cube is Quad Tree. Quad tree is recursively divided at multiple levels based on countries, region, state, cities, polygons etc. Thus, it is better for queries like whats the country for this location OR which roads intersect. So it is widely used in Google Maps 
+                - How location based channel id works: 
+                  - When User opens the app 
+                    - Friends are fetched 
+                    - Right cells are computed based on users location 
+                    - Right friends are fetched from those cells ( friends intersection user ids in cells ) 
+                    - Distance is calculated ( this is optional though if exact raidus is not needed )
+                    - User gets notified about nearby friends 
+                  - When User changes location 
+                    - updated only when user changes the cell
+                - Multi-Region Design : Users worldwide.
+                  - Partition by geography:  US-East, US-West, Europe, Asia
+                    Each region owns nearby cells.
+              
+              - Optimizations in  Location based channel
+                - Relationship graph : store friends relationship in each geohash cell channel to avoid friend based filtering later
+                - incremental updates (send only if moved > 50m or cell is changed) instead of every second
+                - adaptive Frequency : If stationary, 1 update / minute. If walking, 15 sec. If driving, every 5 sec, 
+
+              - Privacy 
+                - Respect GDPR laws to avoid cross country data sharing ( multi region design above)
+                - ACLs since users have settings : share with everyone or friends of friends or friends or select friends or none 
+                - Do not share latitude longitude but high level location like Downtown San Jose
+
+              - Hotspot Problem
+                - Levi's Stadium where 50,000 users in one cell. Single shard melts.
+                - Solution : Cell splitting.
+                    - Level 10 becomes Level 11 automatically.
+                    - Adaptive hierarchy.
+                    - Exactly why S2/H3 hierarchy matters.
                   
             15. Distributed Message Queue
               https://chatgpt.com/g/g-p-698235e6d2ac8191b248a12be431269a/c/6a0a5d28-d280-83e8-ac54-bf658914dea2 
