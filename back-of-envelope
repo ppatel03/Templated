@@ -825,7 +825,7 @@ Time to understand scalability, latency aspects
               - High consistency on metadata DB 
                   - User -> workspace (id, user id) -> file (id, workspace id) -> versions (id, file id, version number) -> block (id, version id) 
               - Upload flow 
-                  connects to API Server -> Gets Block server -> on completion of block upload -> Notification service
+                  connects to API Server -> Gets Block server -> on completion of block upload -> Update metadata -> call Notification service
               - Download flow 
                   from notification service -> downloads metadata about block ids -> downloads blocks from block server
               - Save storage space (discard old versions, set a limit on versions, dedup blocks, move to cold storage)
