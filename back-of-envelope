@@ -1135,7 +1135,8 @@ Time to understand scalability, latency aspects
                 - incremental updates (send only if moved > 50m or cell is changed) instead of every second
                 - adaptive Frequency : If stationary, 1 update / minute. If walking, 15 sec. If driving, every 5 sec, 
                 - Offload nearby friends computation to "Redis Geo" ( 1-3 ms) especially when user opens the app and needs all friends
-                  - 1. Redis GEO — how it actually works internally
+                  - 1. Redis GEO — how it actually works internally 
+                    https://claude.ai/chat/222c05cf-5e76-4c4d-967c-8998876901ed 
                       - Redis GEO is not a separate data structure. It's a sorted set where the score is a 52-bit Geohash integer encoding of (lat, lng).
                       - So When you call: GEOADD friends:active -73.98 40.75 "user:42"
                       - Redis internally does: ZADD friends:active <52-bit-geohash-score> "user:42"
