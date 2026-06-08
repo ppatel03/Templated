@@ -1134,6 +1134,23 @@ Time to understand scalability, latency aspects
                 - Relationship graph : store friends relationship in each geohash cell channel to avoid friend based filtering later
                 - incremental updates (send only if moved > 50m or cell is changed) instead of every second
                 - adaptive Frequency : If stationary, 1 update / minute. If walking, 15 sec. If driving, every 5 sec, 
+                - Offload nearby friends computation to "Redis Geo" ( 1-3 ms) especially when user opens the app and needs all friends
+                  - 1. Redis GEO — how it actually works internally
+                      - Redis GEO is not a separate data structure. It's a sorted set where the score is a 52-bit Geohash integer encoding of (lat, lng).
+                      - So When you call: GEOADD friends:active -73.98 40.75 "user:42"
+                      - Redis internally does: ZADD friends:active <52-bit-geohash-score> "user:42"
+                      - The geohash score is computed by interleaving the bits of latitude and longitude — a Z-order (Morton) curve. This is the key property: points that are close geographically have close scores, so a range scan on the sorted set approximately captures a geographic bounding box.
+                        Latitude bits:   0 1 0 1 1 0 ...
+                        Longitude bits:  1 0 1 0 0 1 ...
+                        Interleaved:    10 01 01 10 01 10 ...  → one integer score
+                      - GEORADIUS command then: 
+                          GEORADIUS key longitude latitude radius [m|km|ft|mi] [WITHCOORD] [WITHDIST] [WITHHASH] [ASC|DESC] [COUNT count]
+                        1. Computes the geohash of the center point
+                        2. Determines which geohash cells overlap the circle (usually 9 cells — center + 8 neighbors)
+                        3. For each cell: computes the score range [min_score, max_score] for that cell
+                        4. Issues ZRANGEBYSCORE on the sorted set for each range
+                        5. Post-filters candidates by exact Haversine distance (because bounding box ≠ circle)
+                      So the complexity is O(N + log M) where M = total members in the set, N = members in the result set. The log M is the binary search into the sorted set. This is extremely fast usually 1-3 ms.
 
               - Privacy 
                 - Respect GDPR laws to avoid cross country data sharing ( multi region design above)
