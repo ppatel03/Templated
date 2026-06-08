@@ -804,15 +804,22 @@ Time to understand scalability, latency aspects
                 - Video Protection - AES encryption, watermarking 
                 - Others - Live streaming, scaling the database
             12. Design Google Drive
-
+              https://chatgpt.com/g/g-p-698235e6d2ac8191b248a12be431269a-system/c/6a26555a-163c-83e8-b484-354cf038005f 
               - High level design
                   Browser/Client  -> Block server (socket) -> Object storage 
                               |        | on completion 
                               |        V
                               | -->   LB.   -> API server -> Metadata DB 
-                                                    | notifies
+                                                    | published this as events
                                                     V
-                                                  Notification service
+                                                   Queue
+                                                     |
+                                                     |
+                                                     |    ( fan out)   
+                                                     |---------------------------------
+                                                     |                                |
+                                                     V                                V
+                                                Block servers /Clients    Notification service ( if offline)
 
               
               - Block server (avoid uploading entire file and instead focus only on changed lines by breaking into blocks, compression, encryption. The server supports delta detection)
@@ -828,7 +835,7 @@ Time to understand scalability, latency aspects
                   connects to API Server -> Gets Block server -> on completion of block upload -> Update metadata -> call Notification service
               - Download flow 
                   from notification service -> downloads metadata about block ids -> downloads blocks from block server
-              - Save storage space (discard old versions, set a limit on versions, dedup blocks, move to cold storage)
+              - Save storage space (discard old versions, set a limit on versions, dedup blocks using hash, move to cold storage, chunk level deduplication using hash)
               - How to resolve conflicts https://www.youtube.com/watch?v=0TJtwV29cjM&ab_channel=CrushingTechEducation 
                   - locks by line but its low performant
                   - operative transformation (google docs)
@@ -842,6 +849,62 @@ Time to understand scalability, latency aspects
                       - CRDT : use union like in list based CRDT 
                           - use decimal points instead of integers. This gives the opportunity to insert in between without changing the original indices. Example - 0.2, 0.4 and you insert something in between like 0.2, 0.3, 0.4 
                           {(H,0.1), (i, 0.5)} U insert {(i,0.2), (!,0.6)} = {(H,0.1), (i, 0.2), (i, 0.5), (!,0.6)}
+              - Presigned URL ( secure, and also avoid App server bottleneck)
+                User uploads 10GB video. Do NOT route through app servers. This is BAD since App server becomes bottleneck 
+                        Client
+                          |
+                        App Server
+                          |
+                        Storage
+                Presigned URL is better 
+                          Client
+                            |
+                          Metadata Service
+                            |
+                          Presigned URL
+                            |
+                          Object Storage
+                Flow:
+                 1. Create upload session
+                 2. Generate upload URLs
+                 3. Upload directly to storage
+                 4. Commit upload
+
+              - Security / ACL based sharing system 
+                  file_id
+                  user_id
+                  permission ( read / write / owner)
+              - Search via search index and stored in elasticsearch/opensearch
+                  filename
+                  owner
+                  tags
+                  mime_type
+              - Multi-region ( US, EU, APAC)
+                  Each region: API, Metadata, Cache 
+                  Storage replicated respecting GDPR laws ( location based info)
+              - Hot shared files : CDN, cache 
+              - Small file problem 1 KB : then Metadata may exceed file size. Solution : Bundle tiny files internally or use optimized storage tiers.
+              https://claude.ai/chat/519b7815-2049-42f8-9c0b-b8a4a408fc9a
+                - Quota enforcement and the TOCTOU race
+                  What's quota enforcement? Every Google Drive user has a storage limit (e.g. 15 GB free). When you upload a file, the system must check you have space and deduct from your quota.
+                  The naive approach and its race condition:
+                    1. Read current quota usage   → 14.5 GB used
+                    2. Check: 14.5 + 1.0 = 15.5 > 15 GB limit? No, it's fine
+                    3. Write: set usage to 15.5 GB
+                    This looks fine with one user. Now imagine you have two uploads happening simultaneously from two different devices. This is the TOCTOU race — Time Of Check To Time Of Use. Between checking and writing, the world changed.
+                  The fix — Redis INCRBY + Lua: Redis has atomic increment operations. INCRBY quota:user_123 1000 (add 1 GB) is guaranteed to be atomic — no two operations can interleave. You never read-then-write; you just atomically increment and check the return value. But the check ("did we go over?") + increment needs to be one atomic operation. Redis Lua scripts run as a single atomic unit on the Redis server
+              - ACL + Search scaling problem
+                  What is ACL? Access Control List — basically, the list of people allowed to see a file. When you share a Google Doc with someone, their user ID gets added to that file's ACL.
+                  - The naive approach and why it fails: Imagine you search "Q4 budget" and Google Drive finds 100 million matching documents across all users. Now the system needs to figure out which of those 100M docs you're actually allowed to see.
+                  - The naive way: run the search → get 100M results → check each one against your permissions → return only the ones you can see.
+                    That's 100M ACL checks. That's catastrophically slow. You can't paginate your way out of this either — if you return "top 10 results" but those 10 all happen to be private, you'd show the user nothing even though they have access to result #11.
+                  The fix — denormalize ACL into the search index:
+                    - Instead of checking permissions after the search, you bake permissions into the search index at the time the document is indexed.
+                    - Each document in Elasticsearch gets a field like:
+                      permitted_user_ids: ["user_123", "user_456", "user_789"]
+                    - Now when you search, your query is: "find documents matching 'Q4 budget' AND permitted_user_ids contains 'user_123'". Elasticsearch does both in one pass. The term filter on permitted_user_ids is O(1) — it's a hash lookup, not a sequential scan.
+
+
             13. Proximity Service
               https://chatgpt.com/c/6a1bd606-1b70-83e8-8c17-1722c3debf42 
               - High level design
