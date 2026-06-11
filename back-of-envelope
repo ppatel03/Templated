@@ -792,7 +792,7 @@ Time to understand scalability, latency aspects
 
               - High level design 
                 - Upload flow (Grokking)
-                    Browser/Client ->  API Service   ------------->    MetaData DB ( strong consistency example, spanner using TrueTime API for external consistency) 
+                    Browser/Client ->  API Service   ------------->    MetaData DB ( consistency distributed, use spanner using TrueTime API for external consistency) 
                           |                                                 ^
                           |(presigned url)                                  | update once transcoding is complete 
                           |                                                 |
