@@ -788,20 +788,45 @@ Time to understand scalability, latency aspects
                     - Disadvantage : expensive for huge historical recomputation 
               - Typo tolerance ( Levenstein distance using edit-distance automaton)
           11. Design Youtube
+              https://chatgpt.com/g/g-p-698235e6d2ac8191b248a12be431269a/c/6a276da8-e054-83e8-b542-f71b01890129 
+
               - High level design 
                 - Upload flow (Grokking)
-                    Browser/Client ->  API Service   ------------->    MetaData DB 
+                    Browser/Client ->  API Service   ------------->    MetaData DB ( strong consistency example, spanner using TrueTime API for external consistency) 
                           |                                                 ^
                           |(presigned url)                                  | update once transcoding is complete 
                           |                                                 |
-                          |-------->Orginal Storage    -----------------> Transcode Service -----> Transcoded Storage (S3) -> CDN
-                                                         (DAG - audio, video(resolution, fps, bit rate thumbnail watermark), metadata)
+                          |-------->Orginal Storage ------> Transcode Service -----> Transcoded Storage (S3) ---> Tiered CDN ( saves serving bandwidth, low latency)
+                                                              DAG - audio, subtitle, 
+                                                         video(resolution, fps, bit rate thumbnail watermark), 
+                                                         metadata ( title, description, tag, views )
 
                 - Why Video transcoding (different resolutions, video formats (HLS, DASH), fps, bit rate)
-                - DAG model for video ( Video, Audio, Metadata. Video has further parallel step -> transcoding different resolutions, thumbnail, watermark)
-                - Performance - CDN, GOP/multipart upload, download chunks during playing rather than whole video, upload service across datacenters, parallelism everywhere
+                   Resolution - no of pixels both lengthwise and breadthwise 
+                    - 4K Ultra HD : 3840 X 2160 px
+                    - 2K HD : 2800 X 1600 px
+                    - Full HD : 1920 X 1080 px 
+                    - HD : 1280 X 720 px
+                   Bit rate - amount of data per second ( Resolution * color depth * frame rate )
+                    - Compression can help condense the data 
+                    - So higher the bit rate, better the quality 
+                    - So 4k is 35-45 Mbps(10 MBps) and 2K is 16 Mbps (1 MBps)
+                - DAG model for video ( Video, Audio, Subtitles, Metadata. Video has further parallel step -> transcoding different resolutions, thumbnail, watermark)
+                - Performance - CDN ( tiered PoP -> regiona -> Origin), GOP/multipart upload for resumable upload, download chunks during playing rather than whole video, upload service across datacenters and different regions, parallelism everywhere, tiered storage ( SSD -> S3 -> Glacier)
+                  https://claude.ai/chat/9599b37c-bf7b-4b9d-abe9-93774bca1c7e 
+                    - Segment-based delivery: Video is split into 2-second MPEG-DASH segments. The player requests segments independently, so quality can change every 2 seconds. The DASH manifest (.mpd file) describes all available quality levels and their segment URLs.
+                    - Adaptive bit rate streaming (ABR) : Instead of serving one giant video, Split into 2-6s segments of different resolutions. So Player measures bandwidth and if bandwidth drops, then it switches from 4k to 2k to Full HD to HD. 
+                      segment1.ts
+                      segment2.ts
+                      segment3.ts
+                    - Compression : Key trade-off — H.264 vs AV1: AV1 gives ~30% better compression at equivalent quality but requires ~10× more CPU to encode/transcode. YouTube applies AV1 only to 1080p+ where bandwidth savings justify the compute cost. 
+                    - CDN cache efficiency: YouTube uses LRU eviction at edge nodes. The top 10% of videos (by views) account for ~90% of bandwidth. For viral new uploads, YouTube pre-warms nearby PoPs when a video hits a view velocity threshold (~10,000 views in 10 minutes). Long-tail videos (99%+ of catalog) are served from regional origin clusters rather than edges, accepting higher latency for lower storage cost.
                 - Safety : Presigned URL for authorized users to upload/modify, also it saves bandwidth by avoiding going through your LB and api server
                 - Video Protection - AES encryption, watermarking 
+                - Video likes counting - Aggregation pipeline + CRDT for multi-region, hyperloglog for approx
+                - Search system - index metadata (title, description, tag) in elasticsearch
+                - Recommendation -  generate candidates using embedding + features and then apply ranking model for serving top X feeds
+                - Hot video problem - CDN, promise cache with redis 
                 - Others - Live streaming, scaling the database
             12. Design Google Drive
               https://chatgpt.com/g/g-p-698235e6d2ac8191b248a12be431269a-system/c/6a26555a-163c-83e8-b484-354cf038005f 
