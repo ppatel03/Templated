@@ -1375,7 +1375,7 @@ Time to understand scalability, latency aspects
                   - Prometheus infra pulls the metrics from the host which can be challenging at sclae with 1M+ hosts, and hosts go down or behind reverse proxy
                   - Datadog / Uber / Meta / Pinterest uses push model instead to handle scale
               - Queue for Metrics Collector (parition by metrics name, topic by region, further tags for filters, )
-              - Storage optimization (RLE and Delta compression, downsampling, retention policies )
+              - Storage optimization (RLE and Delta compression and Facebook Gorilla compression ( delta compression for timestamps and at times, uses xor of previous values which does not change much), downsampling, retention policies )
               - Alerting system (how to dedup - check if alert message is already provided)
                 - Approach 1 : poll based but loses real-time/granularity if polling interval is low ( say 5s)
                 - Approach 2 : stream based where alerts listen to writes and trigger real-time alerts 
@@ -1412,6 +1412,35 @@ Time to understand scalability, latency aspects
                     count=5000
                 4. DD-sketch ( datadag) : instead of storing 1 billion latency values, DDSketch only stores the count of how many numbers fell into each bucket with x% relative error. Server A, B, and C each keep their own 4 KB sketch. At the end of 10 seconds, they send just these tiny 4 KB sketches to your central dashboard. Merging them is as simple as adding the bucket counts together. Example - If your true P99 latency is 100ms, a DDSketch configured with a 1% error guarantee will instantly tell you the P99 is between 99ms and 101ms. 
                     vs histogram which stores exact range resulting in lot of buckets and could be imprecise  
+              - GPU monitoring 
+                - Just GPU utilization is not enough
+                - Layer 1 : GPU health 
+                    Temperature
+                    Power
+                    Fan speed
+                    ECC errors
+                  Example ECC error spike often predicts GPU failure.
+                - Layer 2 : Utilization from DCGM 
+                    SM utilization ( How busy streaming multiprocessors are. )
+                    Tensor Core utilization ( Important for training.)
+                    Memory utilization (HBM usage.)
+                    Memory bandwidth ( Common bottleneck.)
+                - Layer 3 : Communication 
+                    - NVLink throughput for GPU <--> GPU
+                    - PCIe bandwidth for Host <--> GPU 
+                    - RDMA bandwidth for Cross node 
+                    Exampe, SM=20%, NVLink=100% then Communication is bottleneck 
+                - Layer 4: Cluster Efficiency
+                    - Don't monitor GPU. Monitor utilization of the fleet.
+                        Queue wait time
+                        Pending jobs
+                        GPU fragmentation
+                - Layer 5: Training Metrics 
+                    tokens/sec
+                    samples/sec
+                    checkpoint duration
+                    gradient synchronization time
+                  Example GPU utilization 90%, tokens/sec dropped 30% means model efficiency issue.
             17. Ad Click Event Aggregation
               https://chatgpt.com/c/6a0ac674-a36c-83e8-9992-0d958a1ecfac 
               - Data model
