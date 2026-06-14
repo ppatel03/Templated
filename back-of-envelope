@@ -1382,7 +1382,7 @@ Time to understand scalability, latency aspects
                       (timestamp, metric_name, {labels}) → single numeric value
                       Example -  cpu_usage{host="A", region="us"} = 72.3
                       Optimized for: many series, high write rate, in built downsampling, in built delta compression, in built alerting, rollups, short-query patterns.
-                    - use case : kubernetes pod cpu timeseries by labels like host type, region.  Since it stores inverted index of labels -> series, searching by labels is much faster within 10ms but storage cost increases if labels have high cardinalities. Clickhouse needs indexing on those columns else it has to scan using dictionary encoding and bitmap encoding upto 200 ms for scans. 
+                    - use case : kubernetes pod cpu timeseries by labels like host type, region with alerting support.  Since it stores inverted index of labels -> series, searching by labels is much faster within 10ms but storage cost increases if labels have high cardinalities. Clickhouse needs indexing on those columns else it has to scan using dictionary encoding and bitmap encoding upto 200 ms for scans. 
                 - ClickhouseDB : specialized for fast analytical queries on huge datasets with many dimensions and high cardinalities; it can store time-ordered data but you build the “time series semantics” (rollups, cardinality discipline, alerting) yourself. Also clickhouse have in-built aggregation support with MV
                   ClickHouse is built for this shape:
                     (timestamp, col1, col2, col3, ..., colN) → wide event row
