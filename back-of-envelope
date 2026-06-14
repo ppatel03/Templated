@@ -2108,6 +2108,8 @@ Time to understand scalability, latency aspects
                             Inactive → 1
                             Pending → 2
 
+                          So your values are stored in 0, 1, 2 form and reduces storage cost. 
+
                           Step 2: Build bitmap per dictionary ID.
                           Column: Status
                                   ├── Dictionary:  [Active, Inactive, Pending]
@@ -2116,12 +2118,14 @@ Time to understand scalability, latency aspects
                                         id=0:  1010100110...   (Active rows)
                                         id=1:  0100010001...   (Inactive rows)
                                         id=2:  0001001000...   (Pending rows)
+                          
+                          So your search are faster 
 
                           Most modern columnar engines combine:
 
-                            Dictionary encoding
+                            Dictionary encoding for less storage 
 
-                            Bitmap indexing
+                            Bitmap indexing for faster search especially for non indexed columns
 
                             Compression
 
