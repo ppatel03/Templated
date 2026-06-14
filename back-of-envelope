@@ -5122,7 +5122,7 @@ Distributed systems today and Benchmarking on common systems
           Example ECC error spike often predicts GPU failure.
         - Layer 2 : Efficiency - https://chatgpt.com/c/6a1722b5-f5a8-83e8-a177-ff948fcdb66f 
               1. Fleet Efficiency
-                - idle GPUs
+                - idle GPUs ( GPU utilization)
                 - fragmentation
                 - reservation waste
 
