@@ -5140,7 +5140,59 @@ Distributed systems today and Benchmarking on common systems
                           | Ray        | ~1M tasks/sec         |
 
               
+    - GPU monitoring 
+        - Just GPU utilization is not enough
+        - Layer 1 : GPU health 
+            Temperature
+            Power
+            Fan speed
+            ECC errors
+          Example ECC error spike often predicts GPU failure.
+        - Layer 2 : Efficiency - https://chatgpt.com/c/6a1722b5-f5a8-83e8-a177-ff948fcdb66f 
+              1. Fleet Efficiency
+                - idle GPUs
+                - fragmentation
+                - reservation waste
 
+              2. Scheduler Efficiency
+                - queue delays
+                - placement locality
+                - gang scheduling
+
+              3. Device Efficiency
+                - SM utilization
+                - occupancy
+                - tensor utilization
+
+              4. Memory Efficiency
+                - HBM bandwidth
+                - cache hit rate
+                - memory stalls
+
+              5. Communication Efficiency
+                - NCCL wait
+                - NVLink saturation
+                - PCIe stalls
+
+              6. Pipeline Efficiency
+                - dataloader starvation
+                - CPU preprocessing
+
+              7. Model Efficiency
+                - batch sizing
+                - operator fusion
+                - quantization
+        - Layer 3 : Network Communication 
+            - NVLink throughput for GPU <--> GPU
+            - PCIe bandwidth for Host <--> GPU 
+            - RDMA bandwidth for Cross node 
+            Exampe, SM=20%, NVLink=100% then Communication is bottleneck 
+        - Layer 4: Training Metrics 
+            tokens/sec
+            samples/sec
+            checkpoint duration
+            gradient synchronization time
+          Example GPU utilization 90%, tokens/sec dropped 30% means model efficiency issue.
       
 
   Cache benchmarking
