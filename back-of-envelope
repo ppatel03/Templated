@@ -1421,6 +1421,7 @@ Time to understand scalability, latency aspects
                     ECC errors
                   Example ECC error spike often predicts GPU failure.
                 - Layer 2 : Utilization from DCGM 
+                    GPU utilization 
                     SM utilization ( How busy streaming multiprocessors are. )
                     Tensor Core utilization ( Important for training.)
                     Memory utilization (HBM usage.)
