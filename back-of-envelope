@@ -1372,20 +1372,23 @@ Time to understand scalability, latency aspects
               - Push vs Pull
                 - Prometheus is pull based vs InfluxDB is push based
               - Queue for Metrics Collector (parition by metrics name, topic by region, further tags for filters, )
-              - Storage optimization (RLE and Delta compression, downsampling & retention )
+              - Storage optimization (RLE and Delta compression, downsampling, retention policies )
               - Alerting system (how to dedup - check if alert message is already provided)
               - Visualization system - Grafana as open source
               - One common question is when to use Timeseries DB vs Clickhouse 
+                  https://claude.ai/chat/04194c08-d441-47db-a75d-dff602522243 
                 - TimeSeriesDB : specialized for metrics over time (ingest, retention, series, monitoring) + in built alerting support 
                   - Time series DB is built for this shape:
                       (timestamp, metric_name, {labels}) → single numeric value
                       Example -  cpu_usage{host="A", region="us"} = 72.3
-                      Optimized for: many series, high write rate, alerting, rollups, short-query patterns.
+                      Optimized for: many series, high write rate, in built downsampling, in built delta compression, in built alerting, rollups, short-query patterns.
+                    - use case : kubernetes pod cpu timeseries by labels like host type, region.  Since it stores inverted index of labels -> series, searching by labels is much faster within 10ms but storage cost increases if labels have high cardinalities. Clickhouse needs indexing on those columns else it has to scan using dictionary encoding and bitmap encoding upto 200 ms for scans. 
                 - ClickhouseDB : specialized for fast analytical queries on huge datasets with many dimensions and high cardinalities; it can store time-ordered data but you build the “time series semantics” (rollups, cardinality discipline, alerting) yourself. Also clickhouse have in-built aggregation support with MV
                   ClickHouse is built for this shape:
                     (timestamp, col1, col2, col3, ..., colN) → wide event row
                     Example - (ts, ad_id, user_id, country, device, bid_price, ...)
-                    Optimized for: arbitrary SQL, JOINs, large scans, analytics over rich events.
+                    Optimized for: arbitrary SQL, JOINs, large scans, in built downsampling with explicit MV, analytics over rich events.
+                    - use case : multi dimensionsional query and support high cardinalities too. 
             17. Ad Click Event Aggregation
               https://chatgpt.com/c/6a0ac674-a36c-83e8-9992-0d958a1ecfac 
               - Data model
