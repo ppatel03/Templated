@@ -1359,6 +1359,7 @@ Time to understand scalability, latency aspects
 
 
             16. Metrics Monitoring and Alerting System
+            https://chatgpt.com/c/6a2ddd5f-a7f0-83e8-b04b-40d17a6f93a5 
               - Data model : timestamp, value, set of <key,value> labels 
               - line protocal which is used in Prometheus, OpenTSDB
               - choice of DB : TimeSeries (burst read, high writes)
@@ -1371,9 +1372,13 @@ Time to understand scalability, latency aspects
                                                                                  -> Visualization 
               - Push vs Pull
                 - Prometheus is pull based vs InfluxDB is push based
+                  - Prometheus infra pulls the metrics from the host which can be challenging at sclae with 1M+ hosts, and hosts go down or behind reverse proxy
+                  - Datadog / Uber / Meta / Pinterest uses push model instead to handle scale
               - Queue for Metrics Collector (parition by metrics name, topic by region, further tags for filters, )
               - Storage optimization (RLE and Delta compression, downsampling, retention policies )
               - Alerting system (how to dedup - check if alert message is already provided)
+                - Approach 1 : poll based but loses real-time/granularity if polling interval is low ( say 5s)
+                - Approach 2 : stream based where alerts listen to writes and trigger real-time alerts 
               - Visualization system - Grafana as open source
               - One common question is when to use Timeseries DB vs Clickhouse 
                   https://claude.ai/chat/04194c08-d441-47db-a75d-dff602522243 
@@ -1381,14 +1386,32 @@ Time to understand scalability, latency aspects
                   - Time series DB is built for this shape:
                       (timestamp, metric_name, {labels}) → single numeric value
                       Example -  cpu_usage{host="A", region="us"} = 72.3
-                      Optimized for: many series, high write rate, in built downsampling, in built delta compression, in built alerting, rollups, short-query patterns.
-                    - use case : kubernetes pod cpu timeseries by labels like host type, region with alerting support.  Since it stores inverted index of labels -> series, searching by labels is much faster within 10ms but storage cost increases if labels have high cardinalities. Clickhouse needs indexing on those columns else it has to scan using dictionary encoding and bitmap encoding upto 200 ms for scans. 
+                      - Every metric label combination stores new series 
+                      - Optimized for: many series, high write rate, in built downsampling, in built delta compression, in built alerting, rollups, short-query patterns.
+                      - use case : kubernetes pod cpu timeseries by labels like host type, region with alerting support.  Since it stores inverted index of metric+label -> series, searching by labels is much faster within 10ms but storage cost increases if labels have high cardinalities or increase in labels. Clickhouse needs indexing on those columns else it has to scan using dictionary encoding and bitmap encoding upto 200 ms for scans. 
                 - ClickhouseDB : specialized for fast analytical queries on huge datasets with many dimensions and high cardinalities; it can store time-ordered data but you build the “time series semantics” (rollups, cardinality discipline, alerting) yourself. Also clickhouse have in-built aggregation support with MV
                   ClickHouse is built for this shape:
                     (timestamp, col1, col2, col3, ..., colN) → wide event row
                     Example - (ts, ad_id, user_id, country, device, bid_price, ...)
                     Optimized for: arbitrary SQL, JOINs, large scans, in built downsampling with explicit MV, analytics over rich events.
                     - use case : multi dimensionsional query and support high cardinalities too. 
+              - Use to compute p99 at scale 
+                1. Naive : scan + sort + take P99 percentile. does not scale 
+                2. Histogram : range based but accuracy depends on bucket boundaries.
+                    Bucket     Count
+                    0-10       1000
+                    10-20      5000
+                    20-50      10000
+                3. t-digest ( elasticsearch, spark): instead of storing 1 billion latency values, it groups into clusters and each cluster has centroids 
+                    Cluster A
+                    mean=10
+                    count=1000
+
+                    Cluster B
+                    mean=20
+                    count=5000
+                4. DD-sketch ( datadag) : instead of storing 1 billion latency values, DDSketch only stores the count of how many numbers fell into each bucket with x% relative error. Server A, B, and C each keep their own 4 KB sketch. At the end of 10 seconds, they send just these tiny 4 KB sketches to your central dashboard. Merging them is as simple as adding the bucket counts together. Example - If your true P99 latency is 100ms, a DDSketch configured with a 1% error guarantee will instantly tell you the P99 is between 99ms and 101ms. 
+                    vs histogram which stores exact range resulting in lot of buckets and could be imprecise  
             17. Ad Click Event Aggregation
               https://chatgpt.com/c/6a0ac674-a36c-83e8-9992-0d958a1ecfac 
               - Data model
