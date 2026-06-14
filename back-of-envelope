@@ -5145,6 +5145,7 @@ Distributed systems today and Benchmarking on common systems
                 - NCCL wait
                 - NVLink saturation
                 - PCIe stalls
+                - Cross node latency (RDMA )
 
               6. Pipeline Efficiency
                 - dataloader starvation
