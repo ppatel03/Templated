@@ -1543,23 +1543,191 @@ Time to understand scalability, latency aspects
               - Fault tolerant : use checkpoint barriers like in Flink to store the snapshot 
               - Others - Data monitoring (Queue size, latency, CPU/RAM), Reconcialiation 
             18. Hotel Reservation System
+               https://chatgpt.com/c/6a31c49e-c954-83e8-8e24-cdf479dacaf3 
+              - High level design (https://claude.ai/chat/a415962f-ee96-4753-ba0d-a6261fc07af1 )
+                  ┌─────────────────────────────────────────────────────────────────┐
+                  │                    CLIENT LAYER                                  │
+                  │  React SPA  ←→  Apollo Client (GraphQL)  ←→  WebSocket (live)  │
+                  └─────────────────────────┬───────────────────────────────────────┘
+                                            │
+                  ┌─────────────────────────▼───────────────────────────────────────┐
+                  │                    API GATEWAY                                   │
+                  │  Rate limiting · Auth (JWT + refresh) · Request coalescing      │
+                  └──────┬──────────────┬──────────────┬──────────────┬────────────┘
+                        │              │              │              │
+                    ┌────▼────┐   ┌─────▼─────┐ ┌────▼────┐  ┌─────▼──────┐
+                    │Inventory│   │ Booking   │ │Payment  │  │Notification│
+                    │Service  │   │ Service   │ │Service  │  │  Service   │
+                    └────┬────┘   └─────┬─────┘ └────┬────┘  └─────┬──────┘
+                        │              │              │              │
+                    ┌────▼──────────────▼──────────────▼──────────────▼────────────┐
+                    │                     EVENT BUS (Kafka)                         │
+                    │  room.held · booking.confirmed · payment.captured · etc.      │
+                    └─────────────────────────────────────────────────────────────-─┘
               - API design
               - Data model (SQL for consistency and read more, write less)
               - Improved data model since room_id cannot be decided at booking time 
                   - hotel (hotel id, ..)
                   - user (user id, ..)
-                  - room_type_inventory (room type id, hotel id,  # available)
-                  - reservation (reservation id, hotel id, room type id,  user id, start date, end date)
+                  - IMPORTANT : room_type_inventory (room type id, hotel id,  #_available, date, price) 
+                    - important to have date as daily inventory 
+                      - example Booking : Jun20-Jun23 means Jun20, Jun21, Jun22 and all days must be available. 
+                  - reservation (reservation id, hotel id, room type id,  user id, status, start date, end date)
                   - room (room id, room type id, user id, floor,) populated during check-in
               - Idempotency through checkout id/reservation id
               - concurrency issues 
-                - Pessimistic locking (like Serializable isolation, low performant and block the reads, depends on DB support for locking)
-                - Optimistic locking 
+                1. Pessimistic locking (like Serializable isolation, low performant and block the reads, depends on DB support for locking)
+                2. Optimistic locking 
                   - using versioning (like in serializable snapshot isolation but has write contention)
                   - using unique key constraint (depends on DB support and has write contention)
-                Optimisitic locking makes more sense due to low writes 
+                  - where clause since MySQL even if multi-threaded, its internal innoDB engine locks the affected rows during the query 
+                     - 'update room_type_inventory set #_available = #_available -1 where #_available > 0'. 
+                 Choice : Optimisitic locking makes more sense due to low writes 
+              - Multi-day booking 
+                - use transaction so that it can roll back if any update fails
+                  BEGIN
+                    UPDATE day1
+                    UPDATE day2
+                    UPDATE day3
+                  COMMIT
               - DB sharding (do we really need it - No based on requirements)
-              - what if DB is sharded (then we need distributed transaction like 2PC or Saga )
+                - If sharding is needed, then shard by hotel id so that all rows from different for that hotel id stays in same shard. 
+                - Distributed Transaction?
+                  -  Booking should never span hotels to avoid distributed transaction 
+                  - Design data model around:
+                    single booking
+                    single hotel
+                    single shard
+              - Temporary Holds 
+                - Booking takes time to choose room, card info and OTP and so we need hold 
+                - Inventory table could be extend to support with hold with ttl of 5 min
+                  #_available
+                  #_held
+                  #_booked
+                - Reservation table could be extend to support hold status with ttl of 5 min
+              - Search options 
+                - Direct MySQL query expensive at scale due to many fields in the table
+                - Store in ElasticSearch or OpenSearch 
+                    {
+                      "hotel_id": 123,
+                      "city": "Santa Clara",
+                      "rating": 4.5,
+                      "price": 199,
+                      "availability": true
+                    }  
+              - Saga pattern with event sourcing for these steps of the workflow : 1) Booking creation 2) Payment 3) Reservation Confirmation
+                - Why Saga (a sequence of local transactions plus compensating transactions)
+                  - These steps in workflow belongs to different services with different DB
+                      Reserve Room ( Inventory Service -> Inventory DB with same shard as Reservation DB)
+                      Charge Card ( Payment Service -> Payment DB)
+                      Send Confirmation ( Reservation Service -> Reservation DB with same shard as Inventory DB)
+                      Update Loyalty Points ( Loyalty Service -> Loyalty DB)
+                  - 2PC is slow, blocks resources, not scalable, coordinator failures and requires special DB support
+                - Saga is a sequence of local transactions plus compensating transactions.
+                  Example:
+                    Reserve Room
+                    Charge Card
+                    Confirm Booking
+                  If something fails: It Undo previous successful steps instead of rolling back a global transaction.
+                - State Machine View
+                    PENDING
+                      ↓
+                    INVENTORY_RESERVED
+                      ↓
+                    PAYMENT_COMPLETED
+                      ↓
+                    CONFIRMED
+                  If anything fails, then compensate. For example, if payment fails, then release inventory
+                    INVENTORY_RESERVED
+                              ↓
+                      PAYMENT_FAILED
+                              ↓
+                      INVENTORY_RELEASED
+                              ↓
+                          FAILED 
+                - Saga Types 
+                  - 1. Choreography : No central coordinator. Services react to events via Kafka 
+                        Booking Service
+                              |
+                              | BookingRequested
+                              ↓
+                        Inventory Service
+                              |
+                              | InventoryReserved
+                              ↓
+                        Payment Service
+                              |
+                              | PaymentSucceeded
+                              ↓
+                        Reservation Service
+                      So, if Payment fails, then payment service emits event failed on kafka topic, Inventory service listens to payment failure even and release inventory
+                      Challenges : Hard to understand flow and debug, circular dependencies 
+                  - 2. Orchestration : Introduce coordinator which is Saga Orchestrator
+                        Orchestrator
+                              ↓
+                        Reserve Inventory
+
+                        Orchestrator
+                              ↓
+                        Charge Payment
+
+                        Orchestrator
+                              ↓
+                        Confirm Booking
+                       So, if Payment fails, then orchestrator detects via 5xx/4xx from payment service and emits event failed on kafka topic (only for change log purpose), Orchestrator service then calls inventory service to release inventorynd 
+                      Challenges : Coordinator being single point of failure  
+                - Saga Requires Idempotency
+                    Every command must support: 1) Execute multiple times and 2) Same result
+                    Examples: ReserveInventory, ReleaseInventory, RefundPayment and ConfirmBooking
+              - Event sourcing 
+                - Many engineers confuse Saga with Event Sourcing.They are different.
+                - Saga answers: How do I coordinate distributed transactions?
+                - Event Sourcing answers: How do I store state?
+                - Traditional database stores Current state only.
+                  Booking
+                  ---------
+                  id=1
+                  status=CONFIRMED
+                - Event sourcing:Store every event.
+                    BookingCreated
+                    InventoryReserved
+                    PaymentSucceeded
+                    BookingConfirmed
+              - How SAGA be combined with EVENT SOURCING 
+                - SAGA emits events which become event store records 
+                    InventoryReserved
+                    PaymentSucceeded
+                    BookingConfirmed
+                - So Coordinator recovery becomes easy. Suppose coordinator dies during payment, then replay events again 
+                      BookingCreated --> InventoryReserved --> Coordinator dies 
+                    - System replays.
+                        BookingCreated --> InventoryReserved --> Payment issue --> Confirmation 
+                - Architecture : CQRS 
+                                  Kafka ( immutable events : InventoryReserved, PaymentSucceeded, BookingConfirmed )
+                                    ↓
+                                Event Store ( still immutable but important for replay) or Booking/Reservation table ( materialized views)
+              - Failure Scenarios 
+                - Booking created but Payment failured 
+                    Saga:  1) Booking creation 2) Payment 3) Fails on Reservation Confirmation 
+                    Solution : compensating transaction : ReleaseInventory
+                - Payment success but confirmation fails 
+                    Saga:  1) Booking creation 2) Payment 3) Fails on Reservation Confirmation 
+                    Solution : compensating transaction : RefundRequested and ReleaseInventory 
+                - Inventory service crash : retry with circuit breaker
+                - Room reserved but response lost : retry with circuit breaker. Avoid double booking with idempotency
+                - Coordinator crash 
+                  - say on "Payment success but confirmation fails "
+                  - Solution : durable event log via Kafka so that one can replay the transaction 
+              - Multi-Region Design 
+               - For Searching 
+                - Users can search hotels worldwide. So data either via DB replication or Elasticsearch clusters (for large scale) replicated across regions 
+               - For Booking
+                - Writes must be consistent to prevent double-booking across regions. So avoid multi-master inventory conflicts. All bookings routed to inventory owner region.
+                    Example 
+                      US hotel booking  → US inventory DB
+                      Japan hotel booking → APAC DB
+
+
             19. Distributed Email Service
               - SMTP for sending emails and at times receiving too. But IMAP/POP3 famous for receiving 
               - How to get address of email servers - using nslookup domain_name
