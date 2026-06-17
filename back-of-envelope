@@ -1764,8 +1764,7 @@ Time to understand scalability, latency aspects
               - Email deliverability 
                 - dedicated IPs, 
                 - Separate servers for promotion emails, 
-                - Email sender reputation (Warm up new email server IP addresses slowly to build a good reputation, so big providers such as Office365, Gmail, Yahoo Mail,    
-                    etc. are less likely to put our emails in the spam folder.), 
+                - Email sender reputation (Warm up new email server IP addresses slowly to build a good reputation, so big providers such as Office365, Gmail, Yahoo Mail,etc. are less likely to put our emails in the spam folder.), 
                 - Ban spammers, 
                 - Feedback processing, 
                 - Good relationship with ISPS
