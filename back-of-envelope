@@ -1388,13 +1388,26 @@ Time to understand scalability, latency aspects
                       Example -  cpu_usage{host="A", region="us"} = 72.3
                       - Every metric label combination stores new series 
                       - Optimized for: many series, high write rate, in built downsampling, in built delta compression, in built alerting, rollups, short-query patterns.
-                      - use case : kubernetes pod cpu timeseries by labels like host type, region with alerting support.  Since it stores inverted index of metric+label -> series, searching by labels is much faster within 10ms but storage cost increases if labels have high cardinalities or increase in labels. Clickhouse needs indexing on those columns else it has to scan using dictionary encoding and bitmap encoding upto 200 ms for scans. 
+                      - use case : kubernetes pod cpu timeseries by labels like host type, region with alerting support.  Since it stores inverted index of metric+label -> series, searching by labels is much faster within 10ms but storage cost increases if labels have high cardinalities or increase in labels. Clickhouse needs indexing on those columns else it has to scan using dictionary encoding and bitmap encoding upto 100 ms for scans. 
                 - ClickhouseDB : specialized for fast analytical queries on huge datasets with many dimensions and high cardinalities; it can store time-ordered data but you build the “time series semantics” (rollups, cardinality discipline, alerting) yourself. Also clickhouse have in-built aggregation support with MV
                   ClickHouse is built for this shape:
                     (timestamp, col1, col2, col3, ..., colN) → wide event row
                     Example - (ts, ad_id, user_id, country, device, bid_price, ...)
                     Optimized for: arbitrary SQL, JOINs, large scans, in built downsampling with explicit MV, analytics over rich events.
                     - use case : multi dimensionsional query and support high cardinalities too. 
+                - Performance comparison https://claude.ai/chat/04194c08-d441-47db-a75d-dff602522243 
+                  - Reads :
+                    1) Last-N-minutes single series (e.g. cpu{host=A}[5m])
+                      Same 
+                    2) Label-set filter — "all series where host=A" (arbitrary label at runtime)
+                        TSDB : 10ms and Clickhouse < 100 ms with dictionary encoding and bitmap encoding
+                    3) Aggregate across all series (e.g. avg CPU per region, last hour)
+                       TSDB : 1s and Clickhouse < 100 ms
+                    4) Wide analytical scan (100M rows, multi-dim GROUP BY)
+                       TSDB : not supported and Clickhouse < 1 s
+                  - Writes : 
+                    Influx DB, Prometheus : 250k writes/s  Clickhouse : 1.5M/s with batching
+
               - Use to compute p99 at scale 
                 1. Naive : scan + sort + take P99 percentile. does not scale 
                 2. Histogram : range based but accuracy depends on bucket boundaries.
