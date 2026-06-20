@@ -1742,6 +1742,7 @@ Time to understand scalability, latency aspects
 
 
             19. Distributed Email Service
+                https://chatgpt.com/g/g-p-698235e6d2ac8191b248a12be431269a/c/6a322640-0c98-83e8-81b8-c1eac3448585 
               - SMTP for sending emails and at times receiving too. But IMAP/POP3 famous for receiving 
               - How to get address of email servers - using nslookup domain_name
               - Attachment - MIME support 
@@ -1756,13 +1757,86 @@ Time to understand scalability, latency aspects
                     Internel -> LB -> SMTP Server -> Incoming queue -> Mail processor (check spam, virus) -> Web socket server -> Client 
                                           |                                                               -> Notification service if offline
                                  Storage (metadata, search store, object store, cache)
-              - Metadata DB (relational -> folder(folder_id, folder name), user(user id, details), user_folder (id, user_id, folder_id),  folder_emails(id, message_id, folder_id, from, to, subject, link_to_s3, is_read, etc.))
+              - Metadata DB (relational -> folder(folder_id, folder name), user(user id, details), user_folder (id, user_id, folder_id),  folder_emails(id, message_id, folder_id, from, to, subject, link_to_s3_body, link_to_s3_attachment, is_read, timestamp etc.))
 
               - Queries : 
                 1. get all folders of users : parition key (user id) 
                 2. get all emails from folders ->  folder_id + sort key (message_id which is time based UUID)
                 - Email threads could be identified by using message_id
                 3. get all read + unread emails : extract all using userid+folder_id and perform filtering but its expensive to perform filtering at large scale. So use denormalized tables for read and unread emails.
+              - Do you need distributed transaction ? No but it can be Event driven
+                  When email sent:
+                    write metadata
+                    write mailbox entries
+                    index search
+                    send notification
+                  Use Event Driven architecture though
+                      EmailCreated
+                    Consumers:
+                      Mailbox Service
+                      Search Service
+                      Notification Service
+                  Eventually consistent.
+
+              - Spam Detection 
+                - SPF ( Sender Policy Framework) : Is this server allowed to send email for this domain?
+                  Example
+                    Google publishes DNS record:google.com
+                    SPF:v=spf1 ip4:1.2.3.4 ip4:1.2.3.5 -all
+                  Meaning:
+                    Only these IPs may send mail for google.com
+                - DKIM (DomainKeys Identified Mail)
+                  SPF verifies sender server while DKIM verifies email content wasn't modified.
+                    How : 
+                    1. Sender abc@google.com signs email with private key.
+                      Subject: Meeting
+                        Body:
+                        Let's meet at 5pm
+                    2. Generate signature:
+                        hash(body) = hash123
+                        Encrypt hash with private key.
+                    3. Attach:
+                        DKIM-Signature: abc123
+                      So message looks like below : 
+                        DKIM-Signature: v=1; a=rsa-sha256; d=example.com; s=january; bh=abc789... b=9x8y7z...
+                        (Note: d= tells Receiver's server where the email came from, s= tells it which selector key to look up, and b= is the encrypted signature)
+                    4. Receiver : Receiver gets email.
+                    5. Fetches public key from DNS say google.com
+                    6. Verifies signature : Decrypt abc123 with sender's public key to get hash123. Uses same formula to calculate hash of body  
+                      1. If calculated hash of body matches with hash123, then verified
+                      2. Else fails 
+                    The magic is in sender decrypting with private key which means attacker can never achieve by changing body, or hash or even  DKIM-Signature
+                - DMARC : DMARC combines SPF + DKIM.
+                - Domain level Reputation : blacklisted IPs, spam score, bounce rate ( email does not exsits), sending volume, domain age 
+                - Sender level Reputation : blacklisted IPs, spam score, bounce rate ( email does not exsits), sending volume, domain age
+                - Use ML Model to determine spam : Example Gmail 
+
+                      Email Arrives
+                            |
+                            V
+
+                      SPF Verification
+                            |
+                            V
+
+                      DKIM Verification
+                            |
+                            V
+
+                      DMARC Policy
+                            |
+                            V
+
+                      Reputation Service ( features cached from stream processing )
+                            |
+                            V
+
+                      ML Spam Model ( spam score )
+                            |
+                            V
+
+                      Inbox / Spam / Reject
+
               - Email deliverability 
                 - dedicated IPs, 
                 - Separate servers for promotion emails, 
@@ -1774,7 +1848,37 @@ Time to understand scalability, latency aspects
                 - Receiving auth : common techniques to combat phishing are: SPF (sender policy framework) and Domain based message authentication. As an example, you can see that in "signed-by" section to every email
               - Pre-signed url to object store which avoids uploading attachment to mail server
               - Search store : elastic search out of box 
-              - Others : Compliance using GDPR, Storage optimization by deduping attachments
+                - Tenant aware routing : Search index by user id, to avoid search exposed from other users
+              - Multi-region : 
+                - US, EU, APAC with each region having its infrastructure
+                - Users homed to region based on residency 
+                - Cross region replication : eventually consistent ( respecting GDPR for EU) 
+              - Others : Compliance using GDPR (user opt in data collection, only collect necessary data), Storage optimization by deduping attachments
+              - Failure Scenarios 
+                - Search Cluster Down
+                  - Email still accepted. 
+                  - Kafka retains events
+                  - Search catches up later.
+                - Notification Down
+                  - Inbox still works.
+                  - Eventually receive notification.
+                - Object Store Failure
+                  - 3x replication
+                  - erasure coding
+              - Scalability 
+                - Fanout Problem
+                  - Email to: 10 million recipients
+                    Example: newsletter
+                    Cannot synchronously create: 10M mailbox rows
+                  - Solution : Fanout workers 
+                      Kafka
+                        |
+                      Fanout Cluster
+                        |
+                      Mailbox Writes
+                  - Hot Users
+                    Celebrity inbox : Millions of emails/day.
+                    Solution : salting or shard further by user id + message id
             20. S3-like Object Storage
               - Block vs File vs Object (cheap, rest api support, high durability)
               - High level design 
