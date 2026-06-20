@@ -1711,6 +1711,26 @@ Time to understand scalability, latency aspects
                     InventoryReserved
                     PaymentSucceeded
                     BookingConfirmed
+                - Example of Saga Coordinator / Orchestrator
+                      Saga Orchestrator
+                          |
+                          | 1. Sends "ReserveRoom" Command
+                          v
+                      [ Reservation Service ] -- 2. Appends "RoomReserved" Event --> [ Event Store ]
+                                                                                            |
+                          +------------------ 3. Publishes "RoomReserved" Event <----------+
+                          |
+                          v
+                        Saga Orchestrator
+                          |
+                          | 4. Sends "ProcessPayment" Command
+                          v
+                      [ Payment Service ]     -- 5. Appends "PaymentCaptured" Event --> [ Event Store ]
+                - Key Behaviors in an Event-Sourced System
+                  1. Commands Go Down, Events Go Up: The orchestrator strictly sends instructions (Commands) down to the services via event bus (kafka) which is recommeneded approach but can also be done via REST/GRPC. The services strictly emit facts (Events) back up, which the orchestrator consumes to know what to do next.
+                  2. The Orchestrator is Also Event-Sourced: In a pure event-sourced system, the Orchestrator itself is an aggregate. It saves its own events (e.g., TripSagaStarted, ReservationStepCompleted) to track its progress. If the orchestrator crashes mid-trip, it replays its own events to rebuild its state machine and resume exactly where it left off.
+                  3. Handling Failures (Compensating Commands): If the Payment Service emits a PaymentFailed event, the orchestrator catches it. It looks at its history, sees that the room was already reserved, and sends a compensating command (CancelRoomReservation) directly back to the Reservation Service to roll back the business transaction.              
+
                 - So Coordinator recovery becomes easy. Suppose coordinator dies during payment, then replay events again 
                       BookingCreated --> InventoryReserved --> Coordinator dies 
                     - System replays.
