@@ -1747,9 +1747,11 @@ Time to understand scalability, latency aspects
               - Attachment - MIME support 
               - High level design 
                 - Email Sending flow 
-                    Client -> LB -> Web Server -> Outgoing queue (error queue) -> SMTP Outgoing (check spam, virus and retry) -> Internel
+                    Client -> LB -> Web Server -> Outgoing queue (error queue) -> SMTP Outgoing (check spam, virus and retry) -> Internet
                                       |
-                          Storage (metadata, search store, object store, cache)
+                                      |                                         -> Search indexer 
+                                      |                                                 |
+                                     Storage (metadata, search store, object store, cache)
                 - Email receiving flow 
                     Internel -> LB -> SMTP Server -> Incoming queue -> Mail processor (check spam, virus) -> Web socket server -> Client 
                                           |                                                               -> Notification service if offline
@@ -1768,7 +1770,9 @@ Time to understand scalability, latency aspects
                 - Ban spammers, 
                 - Feedback processing, 
                 - Good relationship with ISPS
-              - Authentication : common techniques to combat phishing are: SPF (sender policy framework) and Domain based message authentication. As an example, you can see that in "signed-by" section to every email
+              - Authentication : 
+                - Receiving auth : common techniques to combat phishing are: SPF (sender policy framework) and Domain based message authentication. As an example, you can see that in "signed-by" section to every email
+              - Pre-signed url to object store which avoids uploading attachment to mail server
               - Search store : elastic search out of box 
               - Others : Compliance using GDPR, Storage optimization by deduping attachments
             20. S3-like Object Storage
