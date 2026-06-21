@@ -4494,6 +4494,42 @@ Distributed best practices
 
   Why there is restrictions in # of ports on the host it all it helps is to identify process on network ?
     Hosts have a hard limit of 65,535 TCP/UDP ports because the port number is defined as a 16-bit integer in the packet header of TCP/IP networking protocols. 
+
+  How does automatic resharding work ? 
+    - Bigtable uses a separated storage and compute architecture. Nodes handle compute, while the actual data sits on a shared distributed file system (Colossus).
+      - Trigger: A tablet exceeds 100–200 MB, or a node experiences sustained high CPU load (a "hot" tablet).
+      - The Split: The Bigtable master instructs the node to split the tablet at a specific row key.Metadata 
+      - Update: The node updates the Bigtable metadata index to turn one row-range pointer into two separate pointers.
+      - Rebalancing: The master assigns one of the new tablets to a different node in the cluster.Speed: This process takes seconds. Because the data stays in place on Colossus, no files are copied across the network.
+
+    - How data copying is done ? 
+      Google bypasses the data-copying bottleneck entirely by using a Software-Defined Network (SDN) called Jupiter, paired with a virtualization layer named Andromeda. Google's Jupiter network provides an immense amount of bandwidth (over 1.3 Petabits per second per datacenter).
+
+
+    Amazon DynamoDB: Consistent hashing and data replication. 
+      - DynamoDB uses a coupled storage and compute architecture. The SSDs storing the data are physically attached to or tightly coupled with the storage nodes, utilizing a consistent hashing ring.
+      1. Trigger: A partition exceeds 10 GB of data, or a single partition exceeds its throughput limits (1,000 WCU or 3,000 RCU).
+      2. The Split: DynamoDB identifies the hash ring space covered by the partition and splits that range exactly in half.
+      3. Data Copying: A new storage node replica group is allocated for the second half of the split. Data belonging to the upper half of the hash range is physically copied over the network to the new nodes.
+      4. Routing Update: The request routers (internal DynamoDB load balancers) are updated with the new hash ring boundaries.
+      5. Speed: This process takes minutes because actual data must be replicated. However, the system remains fully available online during the split
+
+      - How data copying is done ? 
+        Amazon DynamoDB Uses SRD (Scalable Reliable Datagram)
+        - Why TCP/IP Suffers from Head-of-Line Blocking (The Core Problem) ? 
+          - TCP is built to guarantee that data arrives exactly in the order it was sent. If Server A sends Packets 1, 2, 3, and 4 down a single TCP socket, Server B's operating system kernel will not deliver Packet 3 or 4 to the application until Packet 2 arrives.If Packet 2 gets dropped or delayed by a congested network switch, Packets 3 and 4 must sit in a memory buffer and wait, even if they arrived perfectly safely. The line is blocked at the head.
+          - Can we workaround with multiple TCP connections ? No 
+            - Data center networks use a routing algorithm called ECMP (Equal-Cost Multi-Path) to handle traffic. When you open a socket, the network switches in datacenter look at a 4-tuple (Source IP, Source Port, Destination IP, Destination Port) to assign that socket a physical path through the data center.
+            - The Catch: To avoid packet reordering issues, ECMP binds an entire individual TCP socket connection to one single, static physical path through the network switches. The Result: If you open 64 TCP sockets, ECMP might accidentally route 20 of them down the exact same physical fiber wire or network switch. If a massive data copy (an "Elephant Flow") happens to be clogging that specific switch, all 20 of your TCP sockets instantly slow down. You cannot dynamically shift a live TCP socket to a different physical path mid-stream without breaking the connection.
+        - How SRD solves the problem ? 
+          - AWS does not use the Linux kernel network stack for SRD traffic because the kernel is too slow and bound by standard TCP rules. Instead, they use a custom hardware component called the AWS Nitro card (a specialized ASIC/smartNIC attached to the server).
+            - 1. RDMA / EFA / RoCe bypassing the kernel 
+                When DynamoDB wants to copy resharding data, it uses a technology called OS bypass (similar to RoCE or InfiniBand). The DynamoDB software writes data directly into the Nitro card's hardware memory buffer, completely skipping the Linux kernel, the socket layer, and the CPU.
+            - 2. Tricke-Feeding the Network
+              Remember the standard data center routing algorithm mentioned earlier called ECMP (Equal-Cost Multi-Path)? Network switches use ECMP to choose a path based on a packet's header information (Source/Destination IP and Ports).SRD uses a brilliant trick to exploit this. The Nitro hardware chip takes your massive data stream, chops it into tiny packets, and deliberately modifies a specific unique ID field in the header of every single packet. When these packets hit the very first physical network switch on the rack, the switch evaluates the ECMP algorithm on each packet. Because the IDs are different, the switch's hardware naturally says: "A goes down Wire 1, B goes down Wire 2, C goes down Wire 3."
+              So The Nitro chip doesn't map out the 64 paths itself. It simply manipulates the packet headers so that the existing data center switches automatically spray the packets across up to 64 completely different physical routes through the building.
+            - 3. If some packets are dropped, then it has Independent route to retry and avoid head of line blocking
+               Example, The Nitro chip at Server A instantly notices packet 500 is delayed and immediately sends a duplicate copy of packet 500 with different path down an entirely different, empty route.
   
 
 =========================================================================================================================
