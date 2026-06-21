@@ -1956,7 +1956,7 @@ Time to understand scalability, latency aspects
                             v
                       Move Object
                   - Dont move all at once say 10 exabytes from Hot to Cold would explode the bill
-                    - Move eventually 
+                    - Move eventually rate-limited over weeks/months.
                       - fragmented objects batch 
                       - update metadata
                       - delete old fragments 
