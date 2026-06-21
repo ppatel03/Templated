@@ -1990,13 +1990,60 @@ Time to understand scalability, latency aspects
                   if above returns 361, fetch 10 nearby ranks using  ZREVRANGE leaderboard_feb_2021 357 365
               - Scaling Challenges 
                 - For 100M+ players, Single Redis fails
-                - Solution 1 : Sharding 
-                    - fixed partition using scores which is range partitioning (easy for reads esp. top 10, hard for writes since users will keep moving across parition for score updates)
-                    - hash slot based partition based on key (hard to get top 10, need to read every shard). One option is you can return scores in percentiles which is rank within shard.
-                - Solution 2 : Dynamic Rebalancing / Sharing like in Google Bigtable, DynamoDB and ElasticSearch 
-                  - Amazon DynamoDB uses SRD(Scalable Reliable Datagram) for fast data copying which combines RDMA + physical route splitting 
-                  - Google BigTable uses high bandwidth Software-Defined Network (SDN) called Jupiter -  1.3 Petabits per second per datacenter
-              - Other DB option is Dynamo which uses consistent hashing 
+                  1. DB (Redis) bottleneck
+                    - Solution 1 : Sharding 
+                        option 1 ( preferred when writes are low ):  fixed partition using scores which is range partitioning (easy for reads esp. top 10 and getting the rank too (rank in current range shard + quantity in previous range shards) but its hard for writes since users will keep moving across parition for score updates)
+                        option 2 (preferred with top k optimization) hash slot based partition based on key (hard to get top 10, need to read every shard). One option is you can return scores in percentiles which is rank within shard.
+                    - Sharding technnique : Dynamic Rebalancing / Sharing like in Google Bigtable, DynamoDB and ElasticSearch 
+                      - Amazon DynamoDB uses SRD(Scalable Reliable Datagram) for fast data copying which combines RDMA + physical route splitting which avoids TCP head of line blocking
+                      - Google BigTable uses high bandwidth Software-Defined Network (SDN) called Jupiter -  1.3 Petabits per second per datacenter
+                  2. Throughput bottleneck with 100M+ reporting 100 scores/day ~ 10B updates / day ~ 100k updates/sec ~ 10 M updates/s at 100x peak ~ 10 GB/s
+                    - Each shard: Redis cluster where Aggregator reduces the bandwidth by batch updates 
+                    -                 Kafka
+                                        |
+                                        V
+
+                              Leaderboard Aggregator ( aggregates the score and publish batch updates )
+
+                                        |
+                            ----------------------
+                            |         |          |
+                        Score     Score      Score
+                        Shard1     Shard2     Shard3
+                  3. Caching top 100 especially if used sharding option 2 based on key / consistent hashing vs range sharding
+              - Event sourcing design with immutable structure as Kafka log and Redis Shard as materialized views 
+                  ScoreUpdated
+                    {
+                    playerId,
+                    score,
+                    timestamp
+                    }
+              - Anti cheat system on scores 
+                - Example player reports scores of 100,150, 125, 10000000 which is suspicious 
+                - Have Fraud detection as one consumer from kafka fan out
+                  -   Kafka
+                        |
+                      Fraud Detector
+                        |
+                      Flag score
+                  - Fraud detector : Velocity, Impossible jumps, Bot patterns, Device fingerprints 
+              - Multi-Region Design
+                - US, EU, APAC 
+                - Reads top k, rank
+                  - from local region 
+                - Writes 
+                  - consistency on local region for read after write consistency. 
+                  - eventual consitency on global with async replication 
+              - Optimization Techniques 
+                1. Exact Rank vs Approx Rank 
+                  - For Exact Rank, use Redis sorted set 
+                  - For Approx Rank, use histogram or t-Digest or DDSketch (used in datadog for say P99) which is much cheaper 
+                2. Global Top-K Merge if used option 2 of key based sharding with consistency hashing
+                  - get top 100 from all shards 
+                  - use Top-K merge which is N log K vs one by one which is N * K
+                3. Hot Players - Celebrity as hot key 
+                  - use caching with push invalidation ( can suffer frequent updates if celebrity is always updating score) or salting hot key
+              - [NOT IMPORTANT] Other DB option is Dynamo which uses consistent hashing 
                   - If game_id + date (year+month only) is used as shard with score as sort key, then what about hot shard for recent game. Use salting : Add random number as partition# across the key and distribute it across the shard.  
                   - So now you partition key becomes game+date+partition# . But to read items for top 10 scores given month, we have to query all the partitions and merge the results, which adds read complexity. Solution is use GSI ( Global secondary index) here. A GSI can have a partition key and sort key that are entirely different from the base table.
                     -  game+date+partition# and score as sort key
