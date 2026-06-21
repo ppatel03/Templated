@@ -1994,6 +1994,8 @@ Time to understand scalability, latency aspects
                     - fixed partition using scores which is range partitioning (easy for reads esp. top 10, hard for writes since users will keep moving across parition for score updates)
                     - hash slot based partition based on key (hard to get top 10, need to read every shard). One option is you can return scores in percentiles which is rank within shard.
                 - Solution 2 : Dynamic Rebalancing / Sharing like in Google Bigtable, DynamoDB and ElasticSearch 
+                  - Amazon DynamoDB uses SRD(Scalable Reliable Datagram) for fast data copying which combines RDMA + physical route splitting 
+                  - Google BigTable uses high bandwidth Software-Defined Network (SDN) called Jupiter -  1.3 Petabits per second per datacenter
               - Other DB option is Dynamo which uses consistent hashing 
                   - If game_id + date (year+month only) is used as shard with score as sort key, then what about hot shard for recent game. Use salting : Add random number as partition# across the key and distribute it across the shard.  
                   - So now you partition key becomes game+date+partition# . But to read items for top 10 scores given month, we have to query all the partitions and merge the results, which adds read complexity. Solution is use GSI ( Global secondary index) here. A GSI can have a partition key and sort key that are entirely different from the base table.
