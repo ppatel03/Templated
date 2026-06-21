@@ -1900,6 +1900,7 @@ Time to understand scalability, latency aspects
                     Celebrity inbox : Millions of emails/day.
                     Solution : salting or shard further by user id + message id
             20. S3-like Object Storage
+              https://chatgpt.com/c/6a360f80-3320-83e8-8a7c-7f7f7558f2f1 
               - Block vs File vs Object (cheap, rest api support, high durability)
               - High level design 
                   Client -> LB -> API Service -> Metadata Serice -> Metadata DB 
@@ -1910,18 +1911,71 @@ Time to understand scalability, latency aspects
                   Upload flow : store basic info in Metadata DB, uploads the file via Data store service, gets the object id, stores in Metadata DB
                   Download flow : Using bucket name and object_name, looks up the Metadata DB for object id and fetch the object from data store service
               - Data store (append only, different files as segments, separate object_mapping table : object id -> file_name, offset, data size, checksum)
+              - Scalability 
+                - Metadata becomes the bottleneck, not storage. Large-scale object stores rely heavily on metadata partitioning and routing.
+                - Suppose:
+                    bucket:
+                      logs/ has 1B objects
+
+                    LIST query requires:
+                      logs/2026/01/*
+                - Potentials : 
+                  - Metadata sharding 
+                    - shard by bucket name, object name since most queries are based on that
+                    - but what about query to list all objects -> use separate denormalized table to store bucket name -> list of object ids
+                  - Hot shard problem 
+                    - Salting or Dynamic partition splitting using path based (logs/2026/01/* -> shard 1 , logs/2026/02/* -> shard 2 ) or salting
               - Durability 
                   - ( more replicas vs parity bits which is optimized for space but low speed because of parity computation)
                   - Example 
                     - with replicas : 4 bit data (d1, d2, d3 and d4) will have its copies. So its  2 * (d1, d2, d3 and d4) ~ 8 
-                    - with parity : 4 bit data (d1, d2, d3 and d4) will only have its 2 parity bits. So its  2 + (d1, d2, d3 and d4) ~ 6
+                    - with erasure coding with parity bits : 4 bit data (d1, d2, d3 and d4) will only have its 2 parity bits. So its  2 + (d1, d2, d3 and d4) ~ 6
+                  - If node 1 dies which is detected via heartbeat, build repair job 
+                    - find missing fragments/data say d3 using node to fragment/data mapping
+                    - compute the d3 from parity bits 
+                    - store d3 in new node 
+                    - update the metadata for node to fragment/data mapping
               - Integrity using checksum 
-              - Metadata sharding 
-                  - shard by bucket name, object name since most queries are based on that
-                  - but what about query to list all objects -> use separate denormalized table to store bucket name -> list of object ids 
               - Object versioning 
               - Multipart upload (breaks the file into muliple parts, server sends eTag for each part, after finish clients sends all etags in order for server to resemble and perform ordering )
-              - Garbage collection : same as compaction process in LSM+SS Table
+              - Multi-tenant isolation per bucket 
+                -  Store tenant id per bucket 
+                -  Quotas, Billing, Rate Limiting 
+              - Garbage collection : same as compaction process in LSM+SS Table 
+              - Tiered Storage / Storage classes
+                  - Hot (Memory, SSD)
+                  - Warm ( fast HDD)
+                  - Cold ( cheap HDD where retreival is mins)
+                  - Archive ( high density HDD with hours of retreival - AWS Glacier Deep Archive behaves similarly, 5-year retention)
+                - This tiering is done via Lifecycle engine 
+                  -   Metadata Scan
+                            |
+                            v
+                      Migration Queue
+                            |
+                            v
+                      Move Object
+                  - Dont move all at once say 10 exabytes from Hot to Cold would explode the bill
+                    - Move eventually 
+                      - fragmented objects batch 
+                      - update metadata
+                      - delete old fragments 
+              - Multi-Region Replication
+                - US, EU, APAC for DR 
+                - PUT
+                  - consistent in user's region to support Read After Write consistency
+                  - Eventually consistent for other regions
+                - GET 
+                  - always first routes to user's region 
+              - Bottlenecks 
+                - 1. Metadata sharding : covered above by bucket name + object name with consistent hashing. Hot shard by Dynamic splitting 
+                - 2. Placement Service: Each PUT needs placement to answer which AZ, which rack and which node 
+                  - central placement server could die at 100M PUT/sec
+                  - solution : Use deterministic placement without coordinator/central placement server
+                    - placement = hash(object_id) which can point to which AZ, which rack and which node 
+                - 3. Network : 100 TB/sec bandwidth needed. So distributed spread across regions, AZs
+              
+                  
             21. Real-time Gaming Leaderboard
               - High level design 
                   Client -> Game service post score to -> Leadboard service -> DB 
