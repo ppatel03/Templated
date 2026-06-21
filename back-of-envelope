@@ -2051,6 +2051,7 @@ Time to understand scalability, latency aspects
                   - Another option is you can return scores in percentiles which is rank within shard.
               - How to implement  report scores if there is a Tie (may be one which got the score first - so timestamp based)
             22. Payment System 
+                https://chatgpt.com/g/g-p-698235e6d2ac8191b248a12be431269a/c/6a386403-5f34-83e8-8f78-315908d39ead 
                 PLEASE REFER THIS VIDEO : http://tinyurl.com/2978ktbs 
               - High level design 
                   Pay-in flow
@@ -2065,18 +2066,70 @@ Time to understand scalability, latency aspects
                       (order_details -> order_id, checkout_id, seller_id, amount, currency, ledger_updated, wallet_updated, payment_status)
               - Double entry ledger ( immutable )
                   - The double-entry system states that the sum of all the transaction entries must be 0. 
-                  - Account	Debit	Credit
-                      buyer	  $1	
-                      seller		    $1
+                  - Immutable
+                  - Data model
+                      entry_id
+                      account_id
+                      transaction_id
+                      debit
+                      credit
+                      timestamp
+                  -  Account_id	    Debit	   Credit    transaction_id    timestamp
+                      buyer_id	    $10                     123           X
+                      seller_id		            $9            123           Y ( during settlement phase)
+                      platform_id             $1            123           Y ( during settlement phase but may differ in time though)
+                
               - Hosted payment page 
               - PSP integration ( Our payment executor creates nonce using checkout id and sends to PSP and at same time redirects user to PSP hosted page with redirect URL back to our page when payment is complete. Also we provide webhook to PSP to notify success ).
+              - Saga pattern with event sourcing
+                - Payment involves multiple services. So use Saga ( sequence of transaction + compensating transactions if failed)
+                  1. Reserve inventory
+                  2. Authorize payment
+                  3. Create order
+                  4. Settled
+                  Compensate if order creation fails: 
+                  1. Refund payment
+                  2. Release inventory
+                - Use Saga orchestrator/coordinator pattern for bettern accounting
+                - Combine with event sourcing to process payment states 
+                    PaymentAuthorized
+                    PaymentCaptured
+                    RefundIssued
+                    SettlementCreated
+                    ChargebackCreated
+              - Settlement System
+                - Payment captured ≠ merchant paid. Huge distinction.
+                - So example, every period say EOD, for all transactions for merchant A, Aggregate and settle
+                  Merchant A:
+                    1000 transactions
+                  Aggregate : 
+                    gross = $100,000
+                    fees = $3,000
+
+                    net = $97,000
+                - Create merchant payout via ACh, Wire, 
+
               - Reconcilliation (automated, fixed with code and manual)
-                - Every night the PSP or banks send a settlement file to their clients. The settlement file contains the balance of the bank account, together with all the transactions that took place on this bank account during the day. The reconciliation system parses the settlement file and compares the details with the ledger system.
+                - Every night, our system requires 3 sources to compare and reconcille if discrepancy 
+                  1. Ledger system : our internal system 
+                  2. Processor system : our PSP system settlement file
+                  3. Bank statement : bank statements to make sure money was actually reflected in the accounts  
+
               - Handle processing delays using webhook URL or polling
+                - HMAC signature if webhook to make sure you are receiving status from authorized PSP
               - Handling failed payments with Retry + dead letter queue
               - Exactly once delivery using idempotency on payment token OR nonce (checkout id)
               - Security 
                   - use HTTPS, Enforce encrpytion, DB replication across regions, Rate limiting to avoid DDOS, Card theft by tokenization, PCI compliance, Address verification + card verification value (CVV)
+              - Multi-Region
+                - US, EU, APAC
+                - Payment apis : Region local with active-active
+                - Ledger writes :  Single Write with active-passive
+                - Design 
+                      Active-Active APIs ( high available payment apis across region)
+                        +
+                      Single-writer Ledger + Asynchronous replication ( writes processed only by one region and replicated across region)
+
             23. Digital Wallet
               - High level design 
                   Client -> LB -> Wallet Service -> DB 
