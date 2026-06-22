@@ -2165,7 +2165,7 @@ Time to understand scalability, latency aspects
                     timestamp
                     type ( credit/debit)
               - Reconcilliation ( same as above with internal ledger, external processing system and bank statement)
-              - Multi-Region Design ( same as above with Active-Passive for ledger with single write leader)
+              - Multi-Region Design ( same as above with Active-Passive for ledger with single write leader and async replication to other regions)
               - Exactly Once Payment : Atleast once + Idempotency on transaction id
               - Fraud System : ML based same as above features 
               - Scale :  what if DB is sharded 
