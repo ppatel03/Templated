@@ -2264,6 +2264,7 @@ Time to understand scalability, latency aspects
                     - promise cache for stream-table join
                     - low frequency checkpointing 
                     - async i/o support for jobs
+                    - related sub-tasks on same node
                   
                   Scheduling Algo 
                     - Quota fariness + premption + Gang scheduling + MIP scheduler ( fragementation, system overhead, instance types supported, workload overhead, WNO) over just built in binpacking scheduler 
