@@ -1977,6 +1977,7 @@ Time to understand scalability, latency aspects
               
                   
             21. Real-time Gaming Leaderboard
+              https://chatgpt.com/g/g-p-698235e6d2ac8191b248a12be431269a/c/6a375939-b8c4-83e8-b0e4-101dab98b1ae 
               - High level design 
                   Client -> Game service post score to -> Leadboard service -> DB 
                           \                               /
@@ -2064,8 +2065,10 @@ Time to understand scalability, latency aspects
                   Data model 
                       (checkout_table -> checkout id, buyer info, credit card info, payment_status, payment_token from PSP )
                       (order_details -> order_id, checkout_id, seller_id, amount, currency, ledger_updated, wallet_updated, payment_status)
+              - Scale if over 1TB or 1+ Gbps bandwidth 
+                - Solution : Shard by checkout id or seller id 
               - Double entry ledger ( immutable )
-                  - The double-entry system states that the sum of all the transaction entries must be 0. 
+                  - The double-entry system because you record both sides of transaction and also helps in validation such that that the sum of all the transaction entries must be 0. 
                   - Immutable
                   - Data model
                       entry_id
@@ -2077,9 +2080,8 @@ Time to understand scalability, latency aspects
                   -  Account_id	    Debit	   Credit    transaction_id    timestamp
                       buyer_id	    $10                     123           X
                       seller_id		            $9            123           Y ( during settlement phase)
-                      platform_id             $1            123           Y ( during settlement phase but may differ in time though)
-                
-              - Hosted payment page 
+                      platform_id             $1            123           Y ( during settlement phase but may differ in time though)             
+              - Prefer navigating to PSP Hosted payment page to avoid hassle of storing card info
               - PSP integration ( Our payment executor creates nonce using checkout id and sends to PSP and at same time redirects user to PSP hosted page with redirect URL back to our page when payment is complete. Also we provide webhook to PSP to notify success ).
               - Saga pattern with event sourcing
                 - Payment involves multiple services. So use Saga ( sequence of transaction + compensating transactions if failed)
@@ -2110,17 +2112,36 @@ Time to understand scalability, latency aspects
                 - Create merchant payout via ACh, Wire, 
 
               - Reconcilliation (automated, fixed with code and manual)
+                - Payment systems are really: 90% reconciliation and 10% moving money 
                 - Every night, our system requires 3 sources to compare and reconcille if discrepancy 
                   1. Ledger system : our internal system 
-                  2. Processor system : our PSP system settlement file
+                  2. Processor system : our PSP system which provides settlement file
                   3. Bank statement : bank statements to make sure money was actually reflected in the accounts  
+                - Example : 
+                  - Ledger system : captured all 100$ correct where buyer -100$ and seller is +90$ and plaform +10$
+                  - Processor system : also captured all 100$
+                  - Bank : only captured buyer -100$ and seller is +90$. 
+                  This means bank should capture plaform +10$ which can be done via ACH or Wire 
+                - How Does Reconciliation Scale at 100M/day
+                  Level 1 : Aggregate check which checks Total amount and Total cost 
+                  Level 2 : Shard Level / Merchant Level (to detect which merchants needs reconcilliation) 
+                  Level 3 : Transaction level (to detect which merchants needs reconcilliation) 
 
               - Handle processing delays using webhook URL or polling
-                - HMAC signature if webhook to make sure you are receiving status from authorized PSP
+                - HMAC signature (  Hash-based Message Authentication Code generated using shared secret key between two) if webhook to make sure you are receiving status from authorized PSP
               - Handling failed payments with Retry + dead letter queue
               - Exactly once delivery using idempotency on payment token OR nonce (checkout id)
               - Security 
                   - use HTTPS, Enforce encrpytion, DB replication across regions, Rate limiting to avoid DDOS, Card theft by tokenization, PCI compliance, Address verification + card verification value (CVV)
+                  - use HMAC signature (  Hash-based Message Authentication Code generated using shared secret key between two) for webhook
+                  - Fraud detector using ML
+                    - Features : 
+                      device fingerprint
+                      velocity
+                      IP reputation
+                      country mismatch
+                      card history
+                      merchant risk 
               - Multi-Region
                 - US, EU, APAC
                 - Payment apis : Region local with active-active
