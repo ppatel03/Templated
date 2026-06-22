@@ -2152,11 +2152,24 @@ Time to understand scalability, latency aspects
                       Single-writer Ledger + Asynchronous replication ( writes processed only by one region and replicated across region)
 
             23. Digital Wallet
+            https://chatgpt.com/c/6a387db1-b6e0-83e8-b082-522b0d1f6dca 
               - High level design 
                   Client -> LB -> Wallet Service -> DB 
-
-              - But what if DB is sharded 
-                1. 2PC (lock + commit) 
+              - Data Model 
+                - Wallet ( account_id, current balance, holds/reserved, available balance)
+                - Ledger ( Double entry ledger as above)
+                    entry_id
+                    tx_id
+                    account_id
+                    amount
+                    timestamp
+                    type ( credit/debit)
+              - Reconcilliation ( same as above with internal ledger, external processing system and bank statement)
+              - Multi-Region Design ( same as above with Active-Passive for ledger with single write leader)
+              - Exactly Once Payment : Atleast once + Idempotency on transaction id
+              - Fraud System : ML based same as above features 
+              - Scale :  what if DB is sharded 
+                1. 2PC ( prepare phase where source and dest reply yes  + commit phase where actual transaction takes place with yes reply ) 
                   - depends on DB support, XA standard to implement it for heterogeneous systems. 
                   - Cons 
                     - The biggest problem with 2PC is that it’s not performant, as locks can be held for a very long time while waiting for a message from the other nodes. 
@@ -2166,20 +2179,73 @@ Time to understand scalability, latency aspects
                   - Cons : 
                     - leaves DB in inconsistent state but application has full control to handle it. 
                     - Same with 2PC, needs co-ordinator support.
-                3. Saga - Best choice for microservice. Can be Decentralized and Orchestration using co-ordinator but unlike TCC, its slow. 
-                For 2 and 3 to handle unbalances state, use phase status table (transaction_id, phase_type, name, status, out_of_order flag for network lag)
+                3. Saga - Best choice for microservice. Can be Decentralized and Orchestration using co-ordinator but unlike TCC, its slow and can leave DB in inconsistent state
+                4. Atomic Ledger + Saga (Preferred) 
+                  - Why Everyone Avoids 2PC ? 
+                    - Imagine all 5 services below : 
+                        Wallet Service
+                        Fraud Service
+                        Rewards Service
+                        Notification Service
+                        Analytics Service
+                    - and payment requires all five. So 2PC would look like : 
+                        PREPARE all services
+                        wait
+                        COMMIT all services 
+                    - Now at scale : Availability collapse
+                        one service slow
+                        => everyone waits
 
-              - Event sourcing with materialized views 
+                        one service unavailable
+                        => everyone blocked
+                  - So this approach focussed on just having Ledger update as atomic transaction which occurs in single shard ( avoids cross shard transfer which avoids 2PC). Rest all operations are eventually consistent 
+                    - Atomic : Ledger
+                          BEGIN
+                            Debit A
+                            Credit B
+                          COMMIT
+                    - Eventually Consistent: Everything else ( Wallet update, Notification, Analytics, Fraud, Rewards) where SAGA could be leveraged here
+                  - Use SAGA with event sourcing. So on ledger update, event is published to Kakfa where SAGA Co-ordinator can assume 
+                  - What if ledger is updated but event failed to publish to Kafka ? 
+                    - Use Transaction Outbox pattern : Since ledger is immutable and append only, have ledger table update and outbox table in one atomic transaction. Outbox table is mutable which stores the status for "event_published?". Publisher can simply periodically query Outbox table and publish to Kafka
+                                  +-------------+
+                                  | Payment API |
+                                  +------+------+
+                                        |
+                                        v
 
-                So  With Saga or TCC
-                      Client -> LB -> Wallet Service (Orchestrator) ---> Commands -->  Queue  --> Consumer/Executor ->  DB partition 1
-                                          |                           to Partition 1                      |
-                                          |                            which has A                       State DB
-                                  queries State DB for status           balance 
-                                                                    ---> Commands -->  Queue  --> Consumer/Executor --> DB partition 2
-                                                                     to Partition 2                       |
-                                                                     which has B                        State DB
-                                                                     balance  
+                                  Ledger DB
+                                        |
+                              +---------+---------+
+                              |                   |
+                              v                   v
+
+                          Ledger Table       Outbox Table
+                                                    |
+                                                    v
+
+                                            Outbox Publisher ( or Debezium ) or CDC
+                                                    |
+                                                    v
+                                                  Kafka
+                                                    |
+                                                    V
+                                                  Saga Coordinator/Orchestrator
+                                                    |
+                                                    | Commands + Event Sourcing using Kafka
+                                                    V
+                                    Wallet Service for Wallet DB update, Notification Service, Fraud Service, Analytics Service
+                    - Real world examples for above - Paypal, Stripe, Block/Cash App, Venmo, Crypto, Even Banks
+                  - Failures / Bottlenecks 
+                    - Hot account / Hot shard : example Merchant account could be Amazon which receives 1M paymens/s
+                      - Solution : Salting or Aggregated updates into wallet DB from Saga pattern
+                    - Kafka failure
+                      - Solution : Outbox retry 
+                    - Ledger corruption 
+                      - Solution : Replay all events and exactly once processing downstream with idempotency on transaction_id
+
+
+
                                                                     
             24. Distributed Job scheduler
               - High level design
