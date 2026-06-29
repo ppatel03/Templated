@@ -5554,9 +5554,14 @@ Distributed systems today and Benchmarking on common systems
                     - non vector db use case since vector DB like Weavite support HNSW which includes skip list and part of implementation does support sparse matrix multiplication
                
                 - ML Serving Infra and Efficiency ( 2026+)
-                  https://www.youtube.com/watch?v=s-eVxzHMgI0 
+                  https://www.youtube.com/watch?v=s-eVxzHMgI0
+                  Split into Prefill ( First token generated which is compute heavy) and Decode Phase ( Subsequent tokens which is Memory Bandwidth heavy) 
                   - knowledge distillation ( teacher-student approach) like in Roblox https://blog.bytebytego.com/p/how-roblox-uses-ai-to-translate-16 
-                  - embedding caching like in Roblox https://blog.bytebytego.com/p/how-roblox-uses-ai-to-translate-16 
+                  - prefix caching like in Roblox https://blog.bytebytego.com/p/how-roblox-uses-ai-to-translate-16 
+                  - Quantization
+                  - Speculative Decoding
+                  - Parallelism ( Tensor Parallelism + MOE Parallelism) for large models 
+                  - Dedicated Hardware for Prefill vs Decode ( Memory Bandwidth Heavy )
                   - high throughput with batching : saves majority of cost ( example, 70% savings from 5ms for 1 req vs 20ms for 32 reqs) but make sure there is 5-10ms window for latency sensitive workloads and 50 ms for thoughput-optimized workloads
                       - Latency is in fact better with batching https://chatgpt.com/c/69b86f52-7544-832e-a812-06e6ca2956c8?src=history_search  because 
                         1. It avoids kernel launch overhead 
