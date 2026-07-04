@@ -600,6 +600,7 @@ Time to understand scalability, latency aspects
             - Advanced news feed system using two tower + ranking ml model 
               https://chatgpt.com/g/g-p-698235e6d2ac8191b248a12be431269a/c/69e72a13-8d4c-83e8-8a12-31c375b85395 
           9. Design A Chat System
+            https://chatgpt.com/g/g-p-698235e6d2ac8191b248a12be431269a/c/69f7d7d3-78d0-83e8-a31f-cf59592e7ab4 
             - Polling (nw bandwidth) vs Long Polling (still makes periodic one-direction connections) vs WebSocket ( 2-way communication which starts with TCP handshake + TLS + Websocket upgrade)
             - Data model ? 
               - 1:1 : id, from, to, message, timestamp
