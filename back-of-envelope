@@ -626,7 +626,7 @@ Time to understand scalability, latency aspects
                     sequence_number
                     timestamp
                     body
-                - User's Inbox
+                - User's Inbox (One row per conversation.)
                     user_id
                     conversation_id
                     last_read_message_id
@@ -639,7 +639,15 @@ Time to understand scalability, latency aspects
                   Wechat still uses per user per message queue. So Group chats, user duplicates messages to all his/her friend's queue
               - Fanout workers 
                 - Fanout-on-write ( Whatsapp )
-                  - updates the user;s 
+                  - updates both messages table and each user's inbox for last_delivered_message_id
+                  - benefits online users to get push message instantaneously
+                  - even when offline users turns online, reads are also faster since fetches are targeted by message_id from DB ( from last_delivered_message_id, last_read_message_id )
+                  - Cons 
+                    - huge write cost
+                - Fanout-on-read ( Slack )
+                  - only updates messages table 
+                  - when user clicks on conversation, then messages are fetched from Messages table using  
+                
               - Message flows 1:1 with synchronization on muliple devices by simply having each device storing max_current_message_id. 
 
         -------------------------------- Interesting open question on websocket ----------------------------
