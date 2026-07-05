@@ -387,13 +387,19 @@ Time to understand scalability, latency aspects
                                               Redis ( supports lua scripts extension to execute atomically)
           - Implementation 
             - Redis data model example by user
-              - Key
-                  user123
-                  Value
-                  counter
-              - TTL : 60 sec (Redis automatically expires.)
+              - For Sliding window counter 
+                  - Key
+                      user123
+                      Value
+                      counter
+                  - TTL : 60 sec (Redis automatically expires.)
+              - For token bucket, 
+                  - {
+                      tokensRemaining:18
+                      lastRefill:123456
+                    }
 
-            - distributed counting using redis (single threaded and hence atomic). Race condition can be avoid using Redis sorted set + help of Lua script which executes atomically
+            - Lua script : distributed counting using redis (single threaded and hence atomic). Race condition can be avoid using Redis sorted set + help of Lua script which executes atomically
               SLIDING_WINDOW_LUA_SCRIPT = """
                   local key = KEYS[1]
                   local limit = tonumber(ARGV[1])
@@ -415,13 +421,18 @@ Time to understand scalability, latency aspects
                       return 0  -- Rate limited
                   end
             """
-          - Rate limiting rules config published in consistent storage like Zookeeper which is easy to subcribe by middle
+          - Rate limiting rules config published in consistent storage like Zookeeper which is easy to subcribe by middleware rate limiting service
           - Exceeded rate limit HTTP error : 429 too many request 
             - HTTP response headers for additional info when user gets 429 too many requests 
               - X-Ratelimit-Remaining: The remaining number of allowed requests within the window.
               - X-Ratelimit-Limit: It indicates how many calls the client can make per time window.
               - X-Ratelimit-Retry-After: The number of seconds to wait until you can make a request again without being throttled.
-          - Amazon API gateway uses token bucket 
+          - Global Rate Limiting (Multi-region)
+            - Suppose limit is 100 requests and if distributed counting is only per region or using eventual consistency to avoid latency (150ms+) in syncing across regions, say US requests 50 and EU request 60, then 110 > 100 - rule violated 
+            - Solution 1 : regional limits ( so for 100 requests per min, split into US =50 / min and EU = 50/min)
+            - Solution 2 : Global redis but has lot of latency across regions (150+ms)
+            - Solition 3 (remcommended) : Hieararchial Rate Limiting ( region limits first and then reaches out to global rate limiter for extra tokens)
+          - Failure handling
           - Some great links 
             - https://medium.com/geekculture/system-design-design-a-rate-limiter-81d200c9d392
             - https://systemsdesign.cloud/SystemDesign/RateLimiter 
@@ -731,7 +742,6 @@ Time to understand scalability, latency aspects
                   - move those hot keys to dedicated topic or partition with better hardware
                   - use tiered strategy
                     - 1:1 - shared partition, groups - dedicated parition, hot groups - dedicated topic 
-        
               - Multi-device sync 
                 - If user already seen message on device A, then update user last_read_message_id in User's Inbox
                 - When user opens device B, it queries to get last_read_message_id and get all unread messages for that conversation
@@ -742,13 +752,14 @@ Time to understand scalability, latency aspects
                 - use epoll
               - Multi-region
                 - Every region can independently:
-                    accept writes
-                    deliver locally
-                    store messages
-                  This is true active-active.
-                - So when Alice in US sends message to Bob in Europe
-                  - Alice gets ack about message being sent when message is persisted to DB in US 
-                  - Push worker in Europe subscribed to replica partition in Europe sends message to Bob asynchronously
+                      accept writes
+                      deliver locally
+                      store messages
+                    This is true active-active.
+                  - So when Alice in US sends message to Bob in Europe
+                    - Alice gets ack about message being sent when message is persisted to DB in US 
+                    - Push worker in Europe subscribed to replica partition in Europe sends message to Bob asynchronously
+                - Kafka : regional leader for partitions with async replication across region 
               - Exactly-once semantics
                 - Atleast once during publish
                 - Idempotency on consumer using message_id+conversation_id ( bloom filter or redis)
