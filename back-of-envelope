@@ -433,6 +433,19 @@ Time to understand scalability, latency aspects
             - Solution 2 : Global redis but has lot of latency across regions (150+ms)
             - Solition 3 (remcommended) : Hieararchial Rate Limiting ( region limits first and then reaches out to global rate limiter for extra tokens)
           - Failure handling
+            - Rate limiting service fails
+              - Fail Open : accept all traffic. Bad for server load 
+              - Fail Closed : close all traffic. Bad for product overall 
+              - Gateway caching : use cached token bucket info from gateway which eventually syncs.
+          - Scalability
+            - Hot shard 
+              - option 1 : salting
+              - option 2 : Hierarchial limiting ( with caching at gateway) which also helps with failure handling
+                - Global limiter --> Regional limiter --> Gateway cache
+          - Metrics to track 
+            - Business : Allowed, Rejected 
+            - Reliability : HARS CCUO Highly available resilient and scalable systems with change safe user operations
+            - Security : Infra vulnerabilities auto-detection tools, Top offenders
           - Some great links 
             - https://medium.com/geekculture/system-design-design-a-rate-limiter-81d200c9d392
             - https://systemsdesign.cloud/SystemDesign/RateLimiter 
