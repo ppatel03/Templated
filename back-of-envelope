@@ -344,16 +344,41 @@ Time to understand scalability, latency aspects
            - Token bucket : requests check if it can get the token from bucket, if bucket has token then request can pass through  
               - Pros : great algo to allow burst traffic. Example if your bucket is 10 and fill rate is 5/min, you could have burst update 10 request/min
               - Cons : 2 parameters to tune ( bucket size and fill rate)
+              - quite common, used in Amazon API Gateway
            - Leaky bucket : uses fixed size queue instead of bucket but requests are serviced from queue at fixed rate 
               - Pros : smooth traffic 
               - Cons : does not allow burst, 2 parameters to tune ( queue size and queue service rate)
+              - used in Video, Networking since burst is not allowed and output rate is constant
            - Fixed window 
               - Pros : memory efficienct, one param to tune 
               - Cons : has boundary issue
            - Sliding window is the best 
               - Pros :  one param to tune, no boundary issue 
+              - Two flavors of implementation 
+                1. Sliding window log : maintains timestamp log per limting user/IP and on every request, remove old timestamps and check via redis lua
+                  Example 
+                      10:01:01
+                      10:01:02
+                      10:01:04
+                      10:01:09
+                  Cons - huge memory especially for millions of users
+                2. Sliding window counter (preferred) : Instead of logs, store fixed timestamp based buckets. You compute weight count. Implemented via redis ttl + lua
+                    So bucket 1 : 10:00 to 10:10 with 10 requests and bucket 2 (current) : 10:10 to 10:20 with 9 requests. If current time is 10:05 and limit is 15 reqs/min, then request its allowed because current bucket + prev bucket * time elapsed % = 9 + 10 * 0.5 = 14 
+            - GCRA (Generic Cell Rate Algorithm)
+              - Extremely memory efficient. Instead of counters, Maintain Next allowed time which is called Theoretical Arrival Time (TAT). 
+              - Example, 
+                - Emission Interval (T): The ideal space between requests. For example, if you allow 60 requests per minute, the emission interval is exactly 1 second (60 seconds / 60 requests)
+                - Burst Tolerance (τ): The maximum amount of "saved up" time a client can use to send a sudden spike of requests all at once
+                - When a request arrives at the current time (t), GCRA performs a quick mathematical comparison
+                  - If t < TAT - τ: The request arrives too early. It would push the schedule past the maximum burst limit, so it is denied.
+                  - If t ≥ TAT - τ: The request is within the allowable burst limit or steady-state rate, so it is allowed
+                  - Refill: 
+                    - If the user hasn't made requests in a long time (t > TAT): The server resets the baseline to the current time and adds the interval
+                      - new TAT = t + T
+              - Originally designed for telecom networks and Cloudfare to manage data flow, it has become incredibly popular for web APIs—even being integrated natively into tools like Redis OSS.
+
           - Design : 
-                                        Rate Limiting Rules config
+                                        Rate Limiting Rules config (Zookeeper)
                                                 |
                                                 V
               Client --> Edge LB--> API Gw -> Rate Limiter Middleware --> API Servers
@@ -361,6 +386,13 @@ Time to understand scalability, latency aspects
                                                 V
                                               Redis ( supports lua scripts extension to execute atomically)
           - Implementation 
+            - Redis data model example by user
+              - Key
+                  user123
+                  Value
+                  counter
+              - TTL : 60 sec (Redis automatically expires.)
+
             - distributed counting using redis (single threaded and hence atomic). Race condition can be avoid using Redis sorted set + help of Lua script which executes atomically
               SLIDING_WINDOW_LUA_SCRIPT = """
                   local key = KEYS[1]
@@ -383,7 +415,7 @@ Time to understand scalability, latency aspects
                       return 0  -- Rate limited
                   end
             """
-          - Rate limiting rules config 
+          - Rate limiting rules config published in consistent storage like Zookeeper which is easy to subcribe by middle
           - Exceeded rate limit HTTP error : 429 too many request 
             - HTTP response headers for additional info when user gets 429 too many requests 
               - X-Ratelimit-Remaining: The remaining number of allowed requests within the window.
