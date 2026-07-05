@@ -319,7 +319,7 @@ Time to understand scalability, latency aspects
                           ↓
                         Edge Load Balancer (L4/L7)
                           ↓
-                        API Gateway / Edge Proxy
+                        API Gateway / Edge Proxy ( At times, combined with Rate limiter or caches tokens to reduce load on redis and even rate limiter if its outside of gateway)
                           ↓
                         Rate Limiter / Auth / WAF
                           ↓
