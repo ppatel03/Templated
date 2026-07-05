@@ -632,11 +632,18 @@ Time to understand scalability, latency aspects
                     last_read_message_id
                     last_delivered_message_id
                     last_seen_at
-              - 1:1 flow :  User A <-> Chat Server A -> Queue for User B -> Chat Server B <-> User B
-                                                            |
-                            User C <-> Chat Server A --------
-              - Group  chat flow : similar to above where User A can send messsage to multiple Queue's for B and C both
-                  Wechat still uses per user per message queue. So Group chats, user duplicates messages to all his/her friend's queue
+              - Flow 
+                Send Message Flow
+                  1.Client → Gateway (WebSocket)
+                  2.Gateway → Chat Service
+                  3. Chat Service:
+                    Assigns message_id (snowflake or time-based)
+                    Writes to Kafka
+                  4. Kafka → Fanout Workers
+                  5. Fanout:
+                    Store message
+                    Push to online users
+                    Queue for offline users
               - Fanout workers 
                 - Fanout-on-write ( Whatsapp )
                   - updates both messages table and each user's inbox for last_delivered_message_id
@@ -644,12 +651,37 @@ Time to understand scalability, latency aspects
                   - even when offline users turns online, reads are also faster since fetches are targeted by message_id from DB ( from last_delivered_message_id, last_read_message_id )
                   - Cons 
                     - huge write cost
+                    - Wechat still uses per user per message queue. So in Group chats, user duplicates messages to all his/her friend's queue.
+                    - WhatsApp avoids this with message queue parition by conversation id and avoids deduplication by only storing cop
                 - Fanout-on-read ( Slack )
                   - only updates messages table 
-                  - when user clicks on conversation, then messages are fetched from Messages table using  
-                
-              - Message flows 1:1 with synchronization on muliple devices by simply having each device storing max_current_message_id. 
-
+                  - when user clicks on conversation, then messages are fetched from Messages table using querying from last_read_message_id
+              - Online Presence
+                - Tracks online/offline using heartbeat via websocket
+                - Use Redis pub-sub due to lightweight data and low latency
+              - Partition key for Queue : by conversation id why ? 
+                - Suppose Alice and Bob are chatting.
+                    Alice -> Bob : Hi
+                    Bob -> Alice : Hello
+                    Alice -> Bob : How are you?
+                - The user expects to see:
+                    Hi
+                    Hello
+                    How are you?
+                - They do not care that Alice's messages are ordered separately from Bob's messages. They care that the conversation is ordered. That is why almost every large chat system partitions by conversation_id (or group_id for groups), not by sender or receiver.
+                - group chats?
+                    Exactly the same.
+                    group_id as conversation_id = 987
+                    Every message goes to partition(group_id).
+                    Ordering is maintained.
+                - Why not partition or having queue per receiver / sender ?
+                  - Partition explosion : Kafka / Queue would explode with billions of partition per user
+                  - Hot partition : esp. for celebrity
+                  - Message ordering : since each user has their own partition, ordering of messages has to be done by server and is not guaranteed  
+              - Multi-device sync 
+                - If user already seen message on device A, then update user last_read_message_id in User's Inbox
+                - When user opens device B, it queries to get last_read_message_id and get all unread messages for that conversation
+ 
         -------------------------------- Interesting open question on websocket ----------------------------
 
               Client <-> Websocket server vs Client <-> LB <-> Websocker server
@@ -686,7 +718,6 @@ Time to understand scalability, latency aspects
           --------------------------------- Interesting open question on websocket ----------------------------
                 
               
-            - Online Presence/ Status Fan out 
             - Others - support media files, E2E Encryption, Improve Load time by multi-datacenter, Retry with Queue
           10. Design A Search Autocomplete System
               https://chatgpt.com/g/g-p-698235e6d2ac8191b248a12be431269a-system/c/6a141532-5fc8-83e8-84e7-9b0567655215 
