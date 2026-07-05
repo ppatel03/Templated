@@ -439,12 +439,12 @@ Time to understand scalability, latency aspects
               - Gateway caching : use cached token bucket info from gateway which eventually syncs.
           - Scalability
             - Hot shard 
-              - option 1 : salting
-              - option 2 : Hierarchial limiting ( with caching at gateway) which also helps with failure handling
-                - Global limiter --> Regional limiter --> Gateway cache
+              - option 1 : salting but now you need to split rate limits per salted key
+              - option 2 : Hierarchial limiting ( with caching at gateway/middleware) which also helps with failure handling
+                - Global limiter --> Regional limiter --> Rate limiting service cache ->  Gateway cache
           - Metrics to track 
             - Business : Allowed, Rejected 
-            - Reliability : HARS CCUO Highly available resilient and scalable systems with change safe user operations
+            - Reliability : HARS CCUO -  Highly available resilient and scalable systems with change safe user operations
             - Security : Infra vulnerabilities auto-detection tools, Top offenders
           - Some great links 
             - https://medium.com/geekculture/system-design-design-a-rate-limiter-81d200c9d392
