@@ -313,6 +313,7 @@ Time to understand scalability, latency aspects
 
       c. Think about edge cases for product
         1. Rate limiter 
+          - Should support per api, per customer, per IP, per org, per tenant and even per Oauth token. Should support burst 
           - Where should the rate limiter be placed 
             - https://chatgpt.com/c/69b25b64-ca7c-832e-a1d2-bb78d103fdaf 
                         Client
@@ -340,13 +341,13 @@ Time to understand scalability, latency aspects
            - Sliding window is the best 
               - Pros :  one param to tune, no boundary issue 
           - Design : 
-                        Rate Limiting Rules config
-                                 |
-                                 V
-              Client -> Rate Limiter Middleware --> API Servers
-                                |
-                                V
-                              Redis ( supports lua scripts extension to execute atomically)
+                                        Rate Limiting Rules config
+                                                |
+                                                V
+              Client --> Edge LB--> API Gw -> Rate Limiter Middleware --> API Servers
+                                                |
+                                                V
+                                              Redis ( supports lua scripts extension to execute atomically)
           - Implementation 
             - distributed counting using redis (single threaded and hence atomic). Race condition can be avoid using Redis sorted set + help of Lua script which executes atomically
               SLIDING_WINDOW_LUA_SCRIPT = """
