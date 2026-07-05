@@ -434,7 +434,7 @@ Time to understand scalability, latency aspects
             - Solition 3 (remcommended) : Hieararchial Rate Limiting ( region limits first and then reaches out to global rate limiter for extra tokens)
           - Failure handling
             - Rate limiting service fails
-              - Fail Open : accept all traffic. Bad for server load 
+              - Fail Open : accept all traffic. Bad for server load and security like DDOS
               - Fail Closed : close all traffic. Bad for product overall 
               - Gateway caching : use cached token bucket info from gateway which eventually syncs.
           - Scalability
