@@ -700,14 +700,14 @@ Time to understand scalability, latency aspects
                   - NGINX LB also  supports WebSocket by allowing a tunnel to be set up between a client and a backend server. https://www.nginx.com/blog/websocket-nginx/ 
                   - Even companies like Whatsapp goes with this approach ( tried practically)
 
-                Option 1 : Client <-> LB <-> Websocker server
+                Option 1 (Recommened and most systems do that): Client <-> LB <-> Websocker server via tunneling
                   Pros
                   - helps in scaling -  creates new socket connections, update existing HTTP connections to socket.  
                   - more security due to LB's reverse proxy capabilities
                   - easy to configure Websocket with available LBs like HaProxy or Ngnix 
                   
                   Cons
-                  - connection limits (65K) per network IP interface. So LB becomes a bottleneck
+                  - Complexity with tunneling 
 
                 Option 2: Client <-> Websocket server implmented in https://dzone.com/articles/load-balancing-of-websocket-connections 
                   Pros 
