@@ -327,7 +327,19 @@ Time to understand scalability, latency aspects
                         Internal Load Balancer
                           ↓
                         Application Servers / Microservices
-               
+          - High level flow 
+                    Request arrives
+                      ↓
+                    Extract key (user:123, ip:10.2.3.4, api:/login, tenant:abc, token:xyz)
+                      ↓
+                    Lookup limit ( config could live in zookeeper + redis for live count)
+                      ↓
+                    Increment counter ( redis )
+                      ↓
+                    Request  Allowed? (redis lua script)
+                      ↓
+                    Yes → Forward
+                    No → 429
           - Algorithms 
            - Token bucket : requests check if it can get the token from bucket, if bucket has token then request can pass through  
               - Pros : great algo to allow burst traffic. Example if your bucket is 10 and fill rate is 5/min, you could have burst update 10 request/min
