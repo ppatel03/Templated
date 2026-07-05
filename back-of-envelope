@@ -696,7 +696,17 @@ Time to understand scalability, latency aspects
               - Chat service Scaling 
                 - use epoll
               - Multi-region
-                - 
+                - Every region can independently:
+                    accept writes
+                    deliver locally
+                    store messages
+                  This is true active-active.
+                - So when Alice in US sends message to Bob in Europe
+                  - Alice gets ack about message being sent when message is persisted to DB in US 
+                  - Push worker in Europe subscribed to replica partition in Europe sends message to Bob asynchronously
+              - Exactly-once semantics
+                - Atleast once during publish
+                - Idempotency on consumer using message_id+conversation_id ( bloom filter or redis)
               - Others - support media files, E2E Encryption, Improve Load time by multi-datacenter, Retry with Queue
 
  
