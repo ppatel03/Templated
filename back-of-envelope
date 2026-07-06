@@ -465,6 +465,23 @@ Time to understand scalability, latency aspects
               - On the other hand, the NetworkTopologyStrategy allows us to specify a different replication factor for each data center. Within a data center, it allocates replicas to nodes in different racks in order to maximize availability.
               - The NetworkTopologyStrategy is the recommended strategy for keyspaces in production deployments, regardless of whether it’s a single data center or multiple data center deployment
           - Deeper insights is here : https://chatgpt.com/c/69d88f32-5dac-83e8-87a0-a025ac3ad458  
+          - In consistent hashing, the ring structure is from certain range say 1 to 2^32-1. Server is allocted to the ring using hash and those keys for server location are stored in binary search based data structure like treemap in Java. So mapping keys to server is fast at O(log N)
+          - To futher speed O(logN) look up, other techniques like Jump consistent Hash (Google) and even Maglev Hashing (Google / Uber) is used widely. In Maglev Hashing, you assign all keys to server in advance, So now you have huge table where each key maps to server. This improves the look up time to O(1)
+            - Table size = 65537, 7 backend servers
+            - Key look up Index
+                0 -> B
+
+                1 -> A
+
+                2 -> C
+
+                3 -> A
+
+                4 -> B
+
+                5 -> C
+                ...
+                65536 -> A
         3. Key value store 
           - data partition - consistent hashing 
           - data replication
