@@ -306,8 +306,11 @@ Time to understand scalability, latency aspects
         Advanced
         - sharding (from back of envelope), 
         - replication (back of envelope), 
-        - consistency (quorum), 
-        - challenges - hot partitioning  
+        - consistency (quorum, CRDT : operational or state based)
+        - challenges - hot partitioning
+        - efficiency + latency - NUMA pinning, epoll, async io, EFA/RDMA for replication, simd libraries, network pinning
+        - multi-region - https://chatgpt.com/c/6a52d717-cf88-83e8-8991-d424e80d948d 
+
 
       b. Queue to avoid synchronous processing and support fault tolerant, durability 
 
@@ -427,7 +430,7 @@ Time to understand scalability, latency aspects
               - X-Ratelimit-Remaining: The remaining number of allowed requests within the window.
               - X-Ratelimit-Limit: It indicates how many calls the client can make per time window.
               - X-Ratelimit-Retry-After: The number of seconds to wait until you can make a request again without being throttled.
-          - Global Rate Limiting (Multi-region)
+          - Global Rate Limiting (Multi-region model : https://chatgpt.com/c/6a52d717-cf88-83e8-8991-d424e80d948d )
             - Suppose limit is 100 requests and if distributed counting is only per region or using eventual consistency to avoid latency (150ms+) in syncing across regions, say US requests 50 and EU request 60, then 110 > 100 - rule violated 
             - Solution 1 : regional limits ( so for 100 requests per min, split into US =50 / min and EU = 50/min)
             - Solution 2 : Global redis but has lot of latency across regions (150+ms)
@@ -487,13 +490,19 @@ Time to understand scalability, latency aspects
           - data partition - consistent hashing 
           - data replication
           - data consistency (quorum) R + W > N 
-          - inconsistency resolution using versioning (RiakDB uses version vector, Dynamo / Cockroach DB / MongoDB uses vector clocks or lamport timestamp, Cassandra uses LWW using timestamp  ). 
-            - Refer Pg 346 use the sequence number generated from lamport timestamp or Zookeeper based counter which supports total ordering (but cannot tell if two operations are conncurrent or are causally related) which supports linearizability (recency)
-            - (Mature approach) Refer Pg 184 for version vector which supports causal order (can tell if two operations are concurrent or casually related) by keeping concurrent versions. You need version vectors for 
-              - operational CRDT ( vector of increments for every node - Example node1 count=33 and increments [1,2,1], node2 count =33 and increments [1,0,1]. Here, to increment the count, you do not need to pass entire version vector on the network - https://tinyurl.com/2a3wd6ln) and 
-              - State based CRDT(causal relationships and need to pass version vectors over the network)
-            - Version vector data structure : [version at node1, version at node2] | [[value at node1], [value at node2]]
+          - inconsistency resolution 
+            1. using LWW like in Cassandra but not reliable due to time sync challenges 
+              - Resolution : all hard to set up
+                -  NTP which has 10 ms drift and uses time correction between client and servier and 
+                - PTP (10 us drift) used in Stocks  -> uses GPS (10 ns drift) -> uses Atomic clocks ( super accurate 1s in millions of years since Cesium-133 atom oscillates exactly 9,192,631,770 times per second)
+            2. using version vectors :  (RiakDB uses version vector . 
+                - Version vector data structure : [version at node1, version at node2] | [[value at node1], [value at node2]]
                   https://www.youtube.com/watch?v=1BXCxpcsmzc&t=622s&ab_channel=Jordanhasnolife 
+            3. using total ordering:   Dynamo / Cockroach DB / MongoDB uses vector clocks or lamport timestamp. Refer Pg 346 use the sequence number generated from lamport timestamp or Zookeeper based counter or Hybrid Logical clocks or Truetime API (global ordering in spanner) which supports total ordering (but cannot tell if two operations are conncurrent or are causally related) which supports linearizability (recency)
+            4. using CRDTs (Mature approach) :  Refer Pg 184 for version vector which supports causal order (can tell if two operations are concurrent or casually related) by keeping concurrent versions. You need version vectors for 
+              - operational CRDT ( vector of increments for every node - Example node1 count=33 and increments [1,2,1], node2 count =33 and increments [1,0,1]. Here, to increment the count, you do not need to pass entire version vector on the network - https://tinyurl.com/2a3wd6ln) and 
+              - State based CRDT(causal relationships like add vector and remove vector and need to pass version vectors over the network)
+            
           - Handle failures 
             - detection using gossip protocol or using zookeeeper
             - temporary failures from sloppy quorum and hinted handoffs (changes since last failure is synced back to replica)
@@ -515,10 +524,17 @@ Time to understand scalability, latency aspects
                     L3
               - However there are problems with leveled merged : CPU intensive, Disk intensive and Causes write amplification
               - Mitigations: 
+                Background compaction (obvious)
                 Separate disks for compaction
                 NUMA pinning
                 EFA/RDMA replication
+                Batching
                 Priority scheduling
+          - Multi-Region model - https://chatgpt.com/c/6a52d717-cf88-83e8-8991-d424e80d948d 
+            - Active Active for both read and writes
+              - quorum within the region 
+              - async replication across region
+              - conflict resolution using explanations above
         4. Design A Unique ID Generator In Distributed Systems
             - Requiremnt : 10K ids per second, so 64-bit ( 2^64 ~ 10^16) is more than enough
             - Single database (bottleneck SPOF)
