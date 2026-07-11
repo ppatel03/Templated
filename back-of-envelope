@@ -483,6 +483,7 @@ Time to understand scalability, latency aspects
                 ...
                 65536 -> A
         3. Key value store 
+           https://chatgpt.com/c/6a4c54fa-ea30-83e8-afd7-325c25cf7ca1 
           - data partition - consistent hashing 
           - data replication
           - data consistency (quorum) R + W > N 
@@ -500,6 +501,24 @@ Time to understand scalability, latency aspects
           - Flow : 
             - Write path (LSM tree + SS Table)
             - Read path (LSM tree + SS Table + Bloom filter + sparse index)
+          - Compaction challenge
+             - Without compaction: Reads become expensive. Example 
+                Level 0
+                  500 SSTables
+              - With Compaction Leveling merge: Reads become optimized due to searching directly with L3 especially with bloom filter + sparse index
+                    L0
+                    ↓
+                    L1
+                    ↓
+                    L2
+                    ↓
+                    L3
+              - However there are problems with leveled merged : CPU intensive, Disk intensive and Causes write amplification
+              - Mitigations: 
+                Separate disks for compaction
+                NUMA pinning
+                EFA/RDMA replication
+                Priority scheduling
         4. Design A Unique ID Generator In Distributed Systems
             - Requiremnt : 10K ids per second, so 64-bit ( 2^64 ~ 10^16) is more than enough
             - Single database (bottleneck SPOF)
