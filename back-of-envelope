@@ -517,7 +517,7 @@ Time to understand scalability, latency aspects
               - Compaction strategies : https://chatgpt.com/c/6a4c54fa-ea30-83e8-afd7-325c25cf7ca1 ,
                 1. Tiered compaction ( Cassandra): background compaction with levels which means there is possibility of same key in 2 SSTables in same level. Good for writes but hard for reads even with bloom filter + sparse index
                 2. Leveled compaction (RocksDB) : Between different SSTables do not overlap, which means key has to copied across levels based on size ( say 10x every level). Good for reads but hard for writes since one write could lead key being re-written multiple times acros levels
-              - With Compaction Leveling merge: Reads become optimized due to searching directly with L3 especially with bloom filter + sparse index
+              - With Leveled Compaction : Reads become optimized due to searching directly with L3 especially with bloom filter + sparse index
                     L0
                     ↓
                     L1
@@ -527,7 +527,7 @@ Time to understand scalability, latency aspects
                     L3
               - However there are problems with leveled merged : CPU intensive, Disk intensive and Causes write amplification
               - Mitigations: 
-                Background compaction (obvious)
+                Background compaction (obvious with tiered compaction)
                 Separate disks for compaction
                 NUMA pinning
                 EFA/RDMA replication
