@@ -308,7 +308,7 @@ Time to understand scalability, latency aspects
         - replication (back of envelope), 
         - consistency (quorum, CRDT : operational or state based)
         - challenges - hot partitioning
-        - efficiency + latency - NUMA pinning, epoll, async io, EFA/RDMA for replication, simd libraries, network pinning
+        - efficiency + latency - NUMA pinning, network pinning, simd libraries, epoll,  async io ( app level like go/java and kernel level like io_uring), EFA/RDMA for replication
         - multi-region - https://chatgpt.com/c/6a52d717-cf88-83e8-8991-d424e80d948d 
 
 
