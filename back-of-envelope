@@ -32,7 +32,7 @@ Framework -
     3.2 - Resilent systems ( measured by MTTR, MTTD, Auto-remediation rate)
       3.2.1. Fault tolerant (DR ready - mirroring, statlessness) 
       3.2.2  Durability (No data loss - replication, Use pull) 
-      3.2.3. Autoscaling, Auto-heal like in Kubernetes
+      3.2.3. Autoscaling, Auto-heal like in Kubernetes, Orion-like system + high bandwidth replication for stateful systems
     3.3. - Consistency 
        - Type and freshness SLA if eventual/temporal : covered during availability above 
        - Data integrity / Accuracy 
