@@ -547,7 +547,18 @@ Time to understand scalability, latency aspects
                 - timestamp in milliseconds is 13 digits 
                 - So how many numbers could be generated in 1 milliseconds ? ~10^4 
                   - number generator can just execute in may be 10 - 100 ns consider counter is in L1/L2 cache. So ~10^4 numbers could be easily generated in 1 miliseconds. So 12 bits atleast for sequence number
-                - challenge : assignment of ids to datacenter and machine 
+                - challenge : needs co-ordination for assignment of ids to datacenter and machine. Use zookeeper/etc or database
+              6. ULID (most commonly used) : 48 bits timestamp (milliseconds) + 80 bits randomness
+                - does not provide global ordering but in the end is similar snowflake for machine and datacenter bits. So it has rough time ordering
+                - Also good part about this is there is no co-ordination needed ( vs snowflake which needs zk for id assignment)
+                - collision : rare since 2^80 for same millisecond. 
+                  - by birthday paradox. 
+                      - sqrt(2^80)
+                          ≈ 2^40
+                          ≈ 1 trillion IDs/day
+                  - our requirement : 10k id /s * 10^5 ~ 10^9 ids/day ~ 1 billion IDs/day
+            - Multi-region : Active-Active with 
+                - Other advantage : database friendless since inserts in B tree are sorted ( which avoids major page splitting in B tree construction)
             Other talking point - time sychronization using NTP, Bit size tuning - timestamp vs sequence bits to support low concurrency 
         5. URL shortener 
             - URL redirect response is status code as 301 and location = original url in response headers. 302 for temporary redirect. 
