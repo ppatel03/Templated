@@ -55,14 +55,11 @@ Framework -
       -  Prod : Automated change analysis for regression detection  
     3.6 - User perceived reliability ( measure by incoming bugs from user, Apdex score) 
     3.7 - Operations ( measured by # of alerts, # of hours in operations, false positive alerts,  % of auto-remediated alerts )
-      - logging, metrics, monitoring and alerting set up, oncall setup 
+      - logging, metrics, monitoring and alerting set up ( example, using datadog), oncall setup
+        - business, engaging and reliability metrics above 
       - auto-remediation 
       - reduce false positive alerts 
 
-  4. Metrics monitoring & Alerting for oncall using datadog
-    a. Business success 
-    b. Engagement metrics
-    c. Reliability metrics like above in Non-functional requirements 
       
 
   5. Estimation 
