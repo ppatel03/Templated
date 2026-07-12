@@ -55,7 +55,7 @@ Framework -
       -  Prod : Automated change analysis for regression detection  
     3.6 - User perceived reliability ( measure by incoming bugs from user, Apdex score) 
     3.7 - Operations ( measured by # of alerts, # of hours in operations, false positive alerts,  % of auto-remediated alerts )
-      - metrics, monitoring and alerting set up, oncall setup 
+      - logging, metrics, monitoring and alerting set up, oncall setup 
       - auto-remediation 
       - reduce false positive alerts 
 
