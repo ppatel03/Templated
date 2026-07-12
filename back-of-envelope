@@ -19,7 +19,7 @@ Framework -
     2.1 Estimate QPS 
       a. Estimate Read vs Write QPS 
 
-  3. Non-Functional Requirements ( Healthy resilent consistent scalable and secure systems with change safe user operations)
+  3. Non-Functional Requirements ( HARSS-CCUO : Healthy resilent available scalable secure and consistent systems with change safe user operations)
   Usually cover the topline Healthy is enough to start with 
     3.1 - Healthy systems 
       3.1.1. - Availability vs Consistency based on CAP which simply means Recency or Linearizability/Total ordering (since consistency has different context for ACID, Consistent hashing )
@@ -539,15 +539,18 @@ Time to understand scalability, latency aspects
               - async replication across region
               - conflict resolution using explanations above
         4. Design A Unique ID Generator In Distributed Systems
-            - Requiremnt : 10K ids per second, so 64-bit ( 2^64 ~ 10^16) is more than enough
-            - Single database (bottleneck SPOF)
-            - Multi-database set up with increments by K for K DBs (scaling problem, ID synchronization)
-            - UUID - UUID is a 128-bit number used to identify information in computer systems. UUID has a very low probability of getting collusion. Quoted from Wikipedia, “after generating 1 billion UUIDs every second for approximately 100 years would the probability of creating a single duplicate reach 50%” [1]. Cons : (128 bits long but our requirements is 64 bits and they not go up with time)
-            - Ticket Server like Flickr (SPOF)
-            - Twitter snowflake approach (64 bits = 5 datacenter + 5 machine + 41 timestamp +  12 sequence + 1 sign  )
-              - timestamp in milliseconds is 13 digits 
-              - So how many numbers could be generated in 1 milliseconds ? ~10^4 
-                - number generator can just execute in may be 10 - 100 ns consider counter is in L1/L2 cache. So ~10^4 numbers could be easily generated in 1 miliseconds. So 12 bits atleast for sequence number
+            https://chatgpt.com/c/6a52e76a-0dc0-83e8-bb5e-c4f0da3908ba 
+            - Requiremnt : 10K ids per second, so 64-bit ( 2^64 ~ 10^16) is more than enough, sortedness
+            - Different algos
+              1. Single database (bottleneck SPOF)
+              2. Multi-database set up with increments by K for K DBs (scaling problem, ID synchronization)
+              3. UUID - UUID is a 128-bit number used to identify information in computer systems. UUID has a very low probability of getting collusion. Quoted from Wikipedia, “after generating 1 billion UUIDs every second for approximately 100 years would the probability of creating a single duplicate reach 50%” [1]. Cons : (128 bits long but our requirements is 64 bits and they not go up with time)
+              4. Ticket Server like Flickr (SPOF)
+              5. Twitter snowflake approach (64 bits = 5 datacenter + 5 machine + 41 timestamp +  12 sequence + 1 sign  )
+                - timestamp in milliseconds is 13 digits 
+                - So how many numbers could be generated in 1 milliseconds ? ~10^4 
+                  - number generator can just execute in may be 10 - 100 ns consider counter is in L1/L2 cache. So ~10^4 numbers could be easily generated in 1 miliseconds. So 12 bits atleast for sequence number
+                - challenge : assignment of ids to datacenter and machine 
             Other talking point - time sychronization using NTP, Bit size tuning - timestamp vs sequence bits to support low concurrency 
         5. URL shortener 
             - URL redirect response is status code as 301 and location = original url in response headers. 302 for temporary redirect. 
