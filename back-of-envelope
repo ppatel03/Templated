@@ -2111,7 +2111,7 @@ Time to understand scalability, latency aspects
                             |
                             V
 
-                      DMARC Policy
+                      DMARC Policy ( reject directly or put in spam inbox)
                             |
                             V
 
