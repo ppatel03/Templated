@@ -565,21 +565,58 @@ Time to understand scalability, latency aspects
               - collision : one option is reject and another preferred option is wait until server catches up with timestamp
              2. Bit size tuning - timestamp vs sequence bits to support low concurrency 
         5. URL shortener 
+           https://chatgpt.com/c/6a53fab5-de44-83e8-a64b-e3d67e41eae2
             - URL redirect response is status code as 301 and location = original url in response headers. 302 for temporary redirect. 
             - 301 helps in reducing server load vs 302 helps in tracking 
-            - Data model - id, short url, long url 
+            - high level design
+                                  User
+                                  |
+                                  |
+                            API Gateway
+                                  |
+                          +---------------+
+                          |               |
+                    URL Create       Redirect Service
+                          |               |
+                          |               |
+                          v               v
+
+                    ID Generator       Cache
+                          |               |
+                          |               |
+                          v               v
+
+                    URL Metadata DB <---+
+                          |
+                          |
+                    Analytics Pipeline
+                          |
+                          |
+                    Kafka → Data Warehouse
+            - Data model - short url (pk), long url, timestamp, expiry ( if differs by user) 
             - Hash function : 62 ^ n = 300 B urls. So n ~ 7 chars 
             - Techniques 
               - hash + collison resolution 
-                - SHA-1 (120 bits which will take 2^61 operations to generate collision), SHA-256 (256 bits which will take 2^120 operations to generate collision)
+                - SHA-1 (120 bits which will take 2^80 (birthday paradox) operations to generate collision), SHA-256 (256 bits which will take 2^123 operations (birthday paradox) to generate collision)
                 - bloom filter to improve look up 
               - Base 62 conversion 
-                - using unique id generator, generate unique id then perform  unique id % 62 
+                - using unique id generator from snowflake/ulid distributed system, generate unique id then perform  unique id % 62 
               - Hash vs Base 62 
                 - fixed vs variable lenght
                 -       vs  depend on unique id generator 
                 - collision vs collision free 
                 - cannot figure next url vs easy to figure out next url if unique id increments by 1 for new entry 
+            - DB : read heavy, simple MySQL could work but if sharding is needed, prefer dynamodb which is based on B tree
+                - consistency : strong since user expects to have tinyurl working immediately.  DynamoDB quorum consistency
+            - Hot url : cache ( since urls do not update) with LRU or salting
+            - Abuse Prevention : 
+              - Scan urls for invalid urls (  length > 2048), spider traps detection
+              - Avoid blacklisted domain
+              - Rate limiting by IP, user, session, API key
+            - Failure handling
+              - Cache down : fall back to DB using circuit breaker on cache
+              - DB down : fall back to other replica and using shard manager like Orion, assign new node the replica and copy the data using RDMA/EFA
+            - Multi-Region : Active-Active with active writes in both region due to no conflict resolution is needed. Async replication across regions 
             - Others : Rate limiter (avoid overflow), Scaling with stateless, DB scaling with replication & sharding, Analytics 
           6. Web Crawler 
             - Advanced : https://chatgpt.com/c/69deeafe-1804-83e8-8ad6-71e01940a7a2 
