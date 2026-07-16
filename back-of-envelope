@@ -629,7 +629,7 @@ Time to understand scalability, latency aspects
             - Downloader (Robots)
               - performance : distributed crawl, cache DNS, Locality, short timeout
               - Handle redirects 
-              - Advanced : async I/O, epoll ( event driven model at kernel layer)
+              - Advanced : async I/O which uses epoll internally ( event driven model at kernel layer)
               - Connection pooling, HTTP/2 multiplexing
             - Content parser 
               - redundant content using deduplication with hashin ( MD5 / SHA)
