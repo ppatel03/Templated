@@ -670,7 +670,7 @@ Time to understand scalability, latency aspects
            https://chatgpt.com/c/69e5ca13-fe08-83e8-a29f-a2877ef977f8 
             - Different types of notification
               - App notification
-                - iOS : APNs, Android : FCM. For this you need two things - certificate upload(to build trust between APN/FCM provider and device) and device token (for APNs/FCM to track about what device)
+                - iOS : APNs, Android : FCM. For this you need two things - certificate upload(to build trust between our service and APN/FCM provider - these days certificate is replaced by JWT verification) and device token (for APNs/FCM to track about what device_id and app_id)
               - SMS 
                 - Services like Twilio, Nexmo 
               - Email service
@@ -686,11 +686,14 @@ Time to understand scalability, latency aspects
                     device_tokens[]
                 - Preferences Table
                     user_id
+                    app_id ( app / web domain)
                     notification_type
                     channel_enabled (push/email/sms)
                 - Notifications Table (optional persistence to track the status)
                     notification_id
                     user_id
+                    app_id (app/ web domain)
+                    content
                     status (sent/failed)
                     timestamp
                   
@@ -702,7 +705,7 @@ Time to understand scalability, latency aspects
             - Notification preferences (opt in / opt out)
             - Rate limiting ( avoid users with too many notifications)
             - Retry (PUT IT BACK TO THE QUEUE OR DLQ after multiple retries)
-            - Security (certificate upload, Appkey/appSecret pair between our notification service and providers)
+            - Security (certificate upload or using JWT or Appkey/appSecret pair between our notification service and providers)
             - Monitor queued notifications
             - Events tracking (state of notification)
             - Scheduled Notifications
