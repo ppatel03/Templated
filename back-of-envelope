@@ -1115,7 +1115,7 @@ Time to understand scalability, latency aspects
                                       |              | on completion 
                                 Metadata service     |
                                     |                |           
-                                    |                | published this as events
+                                    |                | published this as events for event sourcing model
                                     V                V
                               Metadata DB          Queue
                                                      |
@@ -1140,6 +1140,8 @@ Time to understand scalability, latency aspects
                   connects to API Server -> Gets Block server -> on completion of block upload -> Update metadata -> call Notification service
               - Download flow 
                   from notification service -> downloads metadata about block ids -> downloads blocks from block server
+              - Event sourcing model
+                - publish as events in event log ( Queue )
               - Save storage space (discard old versions, set a limit on versions, dedup blocks using hash, move to cold storage, chunk level deduplication using hash)
               - How to resolve conflicts https://www.youtube.com/watch?v=0TJtwV29cjM&ab_channel=CrushingTechEducation 
                   - locks by line but its low performant
