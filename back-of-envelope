@@ -1458,7 +1458,7 @@ Time to understand scalability, latency aspects
                       - Worst case ~10 million updates per second, so its IO bound and with modern 100 Gbps (10 GBps) ENA network optimized instances,  you need just 3 servers for 10 million connections (10 million * 100B / 10 GB = 1 server and +2 server due to unexpected bandwidth)
                   - redis pub/sub server will use consistent hashing with zookeeper which stores the ring structure (example : node1, node2, node3, node 2, node 1, node 4) and hashfunction . 
                     - Why not just used Redis in built sharding support ? 
-                      - redis also has in built "hash slot" algorithm or an application-side hash ring. Redis introduced Sharded Pub/Sub using SSUBSCRIBE and SPUBLISH. So there is a way where you do not have to rely on zookeeper for redis but management and scaling becomes hard and notifications on any redis hard going down are not proactive like zookeeper as shown below
+                      - redis also has in built "hash slot" algorithm or an application-side hash ring. Redis introduced Sharded Pub/Sub using SSUBSCRIBE and SPUBLISH. So there is a way where you do not have to rely on zookeeper for redis but management and scaling becomes hard and notifications on any redis server going down are not proactive like zookeeper as shown below
                       1. Cluster Handshake: A client connects to any node in the Redis Cluster.
                       2. Cluster Topology: The Redis node returns the state of the cluster—a mapping of the 16384 slots to specific node IP addresses.
                       3. Local Cache: The client caches this map locally to route subsequent messages to the correct shard.
@@ -1486,7 +1486,7 @@ Time to understand scalability, latency aspects
               - Alternative approaches of using location based channel id : The challenge with this redis pub-sub channel id based on friends is that any location updates would cause all subscribers have to consume the updates and calculate the distance 
                   1. Use Geohash : so channel id would be geohash id and updates would only occur when user enter/leaves the channel. But Goehash has boundary problem since expanding geohash cell as a square means expanding to 9 neighbours and diagonal neighbours are often far from the center square. It does not fit well if the use case is finding within circular boundary
                   2. H3 : this is hexagon cell with hieararchy since hexagon fit well with equal area and neighbour expansion. It is easy to updates at scale and used in uber, ride sharing systems. 
-                  3. S3 : To avoid distortion caused by Geohash, S2 projects earth onto cube and then each face of the cube is Quad Tree. Quad tree is recursively divided at multiple levels based on countries, region, state, cities, polygons etc. Thus, it is better for queries like whats the country for this location OR which roads intersect. So it is widely used in Google Maps 
+                  3. S2 : To avoid distortion caused by Geohash, S2 projects earth onto cube and then each face of the cube is Quad Tree. Quad tree is recursively divided at multiple levels based on countries, region, state, cities, polygons etc. Thus, it is better for queries like whats the country for this location OR which roads intersect. So it is widely used in Google Maps 
                 - How location based channel id works: 
                   - When User opens the app 
                     - Friends are fetched 
