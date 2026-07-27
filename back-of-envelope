@@ -1111,20 +1111,20 @@ Time to understand scalability, latency aspects
             12. Design Google Drive
               https://chatgpt.com/g/g-p-698235e6d2ac8191b248a12be431269a-system/c/6a26555a-163c-83e8-b484-354cf038005f 
               - High level design
-                  Browser/Client  -> Block server (socket) -> Object storage 
-                              |        | on completion 
-                              |        V
-                              | -->   LB.   -> API server -> Metadata DB 
-                                                    | published this as events
-                                                    V
-                                                   Queue
+                  Browser/Client  --> LB --> Block server (socket) -> Object storage 
+                                      |              | on completion 
+                                Metadata service     |
+                                    |                |           
+                                    |                | published this as events
+                                    V                V
+                              Metadata DB          Queue
                                                      |
                                                      |
                                                      |    ( fan out)   
-                                                     |---------------------------------
-                                                     |                                |
-                                                     V                                V
-                                                Block servers /Clients    Notification service ( if offline)
+                    ---------------------------------|---------------------------------
+                    |                                |                                |
+                    V                                V                                V
+              Metadata DB updater             Block servers /Clients (if online)    Notification service ( if offline)
 
               
               - Block server (avoid uploading entire file and instead focus only on changed lines by breaking into blocks, compression, encryption. The server supports delta detection)
