@@ -1111,8 +1111,8 @@ Time to understand scalability, latency aspects
             12. Design Google Drive
               https://chatgpt.com/g/g-p-698235e6d2ac8191b248a12be431269a-system/c/6a26555a-163c-83e8-b484-354cf038005f 
               - High level design
-                  Browser/Client  --> LB --> Block server (socket) -> Object storage 
-                                      |              | on completion 
+                  Browser/Client --> LB --> Block server (socket) -> Object storage 
+                                    |                | on completion 
                                 Metadata service     |
                                     |                |           
                                     |                | published this as events for event sourcing model
@@ -1121,11 +1121,11 @@ Time to understand scalability, latency aspects
                                                      |
                                                      |
                                                      |    ( fan out)   
-                    ---------------------------------|---------------------------------
-                    |                                |                                |
-                    V                                V                                V
-              Metadata DB updater             Block servers /Clients (if online)    Notification service ( if offline)
-
+                    ---------------------------------|------------------------------------
+                    |                                |                                    |
+                    V                                V                                    V
+             Push workers to Block servers     Notification service ( if offline)     Rest - Search index, Analytics, Event log update
+                (if online)
               
               - Block server (avoid uploading entire file and instead focus only on changed lines by breaking into blocks, compression, encryption. The server supports delta detection)
                 - why dropbox breaks into 4MB
