@@ -2427,11 +2427,11 @@ Time to understand scalability, latency aspects
               - Multi-Region
                 - US, EU, APAC
                 - Payment apis : Region local with active-active
-                - Ledger writes :  Single Write with active-passive
+                - Ledger writes :  Single Write with active-passive (or Paritioned ownership if single ledger becomes huge )
                 - Design 
                       Active-Active APIs ( high available payment apis across region)
                         +
-                      Single-writer Ledger + Asynchronous replication ( writes processed only by one region and replicated across region)
+                      Single-writer Ledger (or Paritioned ownership if single ledger becomes huge ) + Asynchronous replication ( writes processed only by one region and replicated across region)
 
             23. Digital Wallet
             https://chatgpt.com/c/6a387db1-b6e0-83e8-b082-522b0d1f6dca 
