@@ -835,12 +835,12 @@ Time to understand scalability, latency aspects
                         - How does it know which server has websocket connection for that user ?
                           -  using discovery service, push worker directly sends message to gateway which has websocket connection to user (tunnel)  
               - Fanout workers 
-                - Fanout-on-write ( Whatsapp )
+                - Fanout-on-write ( Whatsapp ) where every user gets notification about messages and inbox is updated
                   - updates both messages table and each user's inbox for last_delivered_message_id
                   - workers send push notification for all messages. It benefits online users to get push message instantaneously
                   - even when offline users turns online, reads are also faster since fetches are targeted by message_id from DB ( from last_delivered_message_id, last_read_message_id )
                   - Cons 
-                    - huge write cost amd network cost
+                    - huge write cost amd network cost especially on notification path
                     - Wechat still uses per user per message queue. So in Group chats, user duplicates messages to all his/her friend's queue.
                     - WhatsApp avoids this with message queue parition by conversation id and avoids deduplication by only storing cop
                 - Fanout-on-read ( Slack )
