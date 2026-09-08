@@ -3402,11 +3402,11 @@ Distributed Systems estimate
         - using RDMA (Remote Direct Memory Access) which is a technology that allows one computer to access the memory of another computer directly, without involving the operating system's CPU or kernel. 
          Why it matters: It eliminates the overhead of traditional TCP/IP networking, resulting in faster data transfers, lower latency, and less CPU load, which is critical for AI training and massive datasets.
             Types: InfiniBand (native RDMA), RoCE (RDMA over Converged Ethernet), and iWARP
-      - 500 Gbps ( Cluster scale range)
+      - 500 Gbps ( Cluster scale range) ~ 100GB/s
       - 10 us ( within datacenter/AZ)
 
     ENA (Elastic Network Adapter) - supported by AWS EC2
-      - 100 Gbps 
+      - 100 Gbps ~ 10 GBps
       - 100 us ( within datacenter/AZ - slightly better than roundtrip within datacenter which is 500 us) 
 
     Common Systems : 
