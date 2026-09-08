@@ -603,7 +603,7 @@ Time to understand scalability, latency aspects
               - Base 62 conversion 
                 - using unique id generator from snowflake/ulid distributed system, generate unique id then perform  unique id % 62 
               - Hash vs Base 62 
-                - fixed vs variable lenght
+                - fixed vs variable lenght ( not necessary if you use snowflake approach)
                 -       vs  depend on unique id generator 
                 - collision vs collision free 
                 - cannot figure next url vs easy to figure out next url if unique id increments by 1 for new entry 
