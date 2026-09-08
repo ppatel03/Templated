@@ -988,10 +988,12 @@ Time to understand scalability, latency aspects
                             k = number of words matching the prefix
                             String comparison per entry: O(m) where m = average word length matching prefix
                   - Trie Data structure with frequency stored at every node with EOW = true 
-                      Complexity :   O(p + k*26 + klogk) : O(p + k + klogk) : O(p+k)
+                      Complexity :   O(p + 26^(l-p) + klogk) : O(p + 26 if l is constant + klogk) : O(p+klogk after storing top words) : O(p)
                           where:
                             p = length of prefix (e.g., "app" = 3)
+                            l = max level  ( remaining ) 
                             k = number of words matching the prefix
+                          
 
                   - But to fetch top 5 suggestions by frequency, complexity O(m)  + O(k) + O(sort by frequency)
                     - if we limit prefix length to search say p=10 and cache top 5 search at every node, then complexity will be constant
