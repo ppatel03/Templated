@@ -1095,7 +1095,7 @@ Time to understand scalability, latency aspects
                     - So higher the bit rate, better the quality 
                     - So 4k is 35-45 Mbps(10 MBps) and 2K is 16 Mbps (1 MBps)
                 - DAG model for video ( Video, Audio, Subtitles, Metadata. Video has further parallel step -> transcoding different resolutions, thumbnail, watermark)
-                - Performance - CDN ( tiered PoP -> regiona -> Origin), GOP/multipart upload for resumable upload, download chunks during playing rather than whole video, upload service across datacenters and different regions, parallelism everywhere, tiered storage ( SSD -> S3 -> Glacier)
+                - Performance - CDN ( tiered PoP -> regional cache -> Origin), GOP/multipart upload for resumable upload, download chunks during playing rather than whole video, upload service across datacenters and different regions, parallelism everywhere, tiered storage ( SSD -> S3 -> Glacier)
                   https://claude.ai/chat/9599b37c-bf7b-4b9d-abe9-93774bca1c7e 
                     - Segment-based delivery: Video is split into 2-second MPEG-DASH segments. The player requests segments independently, so quality can change every 2 seconds. The DASH manifest (.mpd file) describes all available quality levels and their segment URLs.
                     - Adaptive bit rate streaming (ABR) : Instead of serving one giant video, Split into 2-6s segments of different resolutions. So Player measures bandwidth and if bandwidth drops, then it switches from 4k to 2k to Full HD to HD. 
