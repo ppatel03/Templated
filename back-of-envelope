@@ -618,7 +618,7 @@ Time to understand scalability, latency aspects
               - Cache down : fall back to DB using circuit breaker on cache
               - DB down : fall back to other replica and using shard manager like Orion, assign new node the replica and copy the data using RDMA/EFA
             - Multi-Region : Active-Active with active writes in both region due to no conflict resolution is needed ( with snowflake - you get 2 bits per region and low collision if you went with ULID). Async replication across regions 
-            - Others : Rate limiter (avoid overflow), Scaling with stateless, DB scaling with replication & sharding, Analytics 
+            - Others :  Scaling with stateless, Analytics 
           6. Web Crawler 
             - Advanced : https://chatgpt.com/c/69deeafe-1804-83e8-8ad6-71e01940a7a2 
             - High level : 
