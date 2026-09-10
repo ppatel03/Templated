@@ -1145,7 +1145,7 @@ Time to understand scalability, latency aspects
                   from notification service -> downloads metadata about block ids -> downloads blocks from block server
               - Event sourcing model
                 - publish as events in event log ( Queue )
-              - Save storage space (discard old versions, set a limit on versions, dedup blocks using hash, move to cold storage, chunk level deduplication using hash)
+              - Save storage space (discard old versions, set a limit on versions, dedup blocks using hash, move to cold storage)
               - How to resolve conflicts https://www.youtube.com/watch?v=0TJtwV29cjM&ab_channel=CrushingTechEducation 
                   - locks by line but its low performant
                   - operative transformation (google docs)
