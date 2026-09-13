@@ -4063,8 +4063,19 @@ Distributed best practices
             When a user views the comment, the script is executed in their browser.
             Solution : 
               - input validation and sanitize before storing 
-              - use output encoding ()
+              - use output encoding (convert < to &lt when rendering so that it does not execute)
+                  | Character | Encoded  |
+                  | --------- | -------- |
+                  | `<`       | `&lt;`   |
+                  | `>`       | `&gt;`   |
+                  | `"`       | `&quot;` |
+                  | `'`       | `&#x27;` |
+                  | `&`       | `&amp;`  |
+
               -  use CSP (Content Security Policy) to avoid external urls for script source
+                  Server sends Header for the webpage : 
+                    - Content-Security-Policy: script-src 'self' 
+                  This will block all <script></script> in your page and only allow scripts to be execute from origin url - example https://www.mydomain.com/my_script.js
         - Reflected XSS (Non-Persistent XSS):
             The malicious script is embedded in a URL or request sent to the server, and the server reflects it back in its response.
             Example:
@@ -4075,7 +4086,7 @@ Distributed best practices
               Hello {{ req.query.name }}
               
             Solution : 
-              - encode query params before rendering
+              - encode query params before rendering (convert < to &lt when rendering)
               - never directly inject request params in HTML
               - use CSP (Content Security Policy) to avoid external urls for script source
               - santinize url params
@@ -4083,7 +4094,7 @@ Distributed best practices
             Example : 
               document.getElementById("msg").innerHTML = location.hash;
             Fix : 
-              textContent instead of innerHTML
+              textContent instead of innerHTML which renders as plain text vs executable
             The malicious script is executed directly in the browser by manipulating the client-side Document Object Model (DOM).
             Example:
             1. The attacker sends malicious input to a user, often through a crafted URL.
