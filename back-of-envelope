@@ -1603,6 +1603,7 @@ Time to understand scalability, latency aspects
                 - binary protocol
                 - batching
                 - compression : zstd, lz4, snappy, gzip as order of compression with tradeoff on cpu vs network/storage
+                - NIC pinning
               - Hot paritition problem 
                 - salting for hot parition is common approach to distribute across but consumer now has to subscribe to other partitions. Also loose ordering. 
                 - virtual replicas like in consistent hashing to distribute across but same problem as above and plus it does not guaranteed to solve hot partition problem 
