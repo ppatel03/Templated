@@ -1711,7 +1711,16 @@ Time to understand scalability, latency aspects
                     Cluster B
                     mean=20
                     count=5000
-                4. DD-sketch ( datadag) : instead of storing 1 billion latency values, DDSketch only stores the count of how many numbers fell into each bucket with x% relative error. Server A, B, and C each keep their own 4 KB sketch. At the end of 10 seconds, they send just these tiny 4 KB sketches to your central dashboard. Merging them is as simple as adding the bucket counts together. Example - If your true P99 latency is 100ms, a DDSketch configured with a 1% error guarantee will instantly tell you the P99 is between 99ms and 101ms. 
+                4. DD-sketch ( datadag) : instead of storing 1 billion latency values, DDSketch only stores the count of how many numbers fell into each bucket with x% relative error. https://share.google/aimode/2BSMjXd52B9UKmWrR 
+                    Step 1: Setting up the Sketch : To achieve a 1% relative error (x), DDSketch calculates a growth factor (γ) using the formula: (1 + x) / (1 - x) ~ 1.02
+                      Every bucket boundary is a power of this γ value. This ensures that as numbers get larger, the buckets widen proportionally, keeping the relative error perfectly locked at 1%.
+                    Step 2: How Data is Standardized (The Bucket Mapping) : When a metric value comes in, DDSketch converts that raw number N into a simple integer index (I) using a logarithmic formula  I = log base γ (N) 
+                      So for 5 ms request , I = log base 1.02 (5) = 80
+                      So for 2000 ms request, I = log base 1.02 (2000) = 379
+                      Instead of keeping track of thousands of raw floating-point numbers, DDSketch just stores a dense or sparse array of counters, like an array or map where keys are integers: {80: 1, 264: 1, 379: 1}
+                    Step 3: Querying a Percentile (The Retrieval) : Let's say your 99th percentile points to Bucket #379 (where our 2,000 ms request landed). 
+                      Then estimated value = 1.02 ^ 379 ~ 1990 ms    
+                  Server A, B, and C each keep their own 4 KB sketch. At the end of 10 seconds, they send just these tiny 4 KB sketches to your central dashboard. Merging them is as simple as adding the bucket counts together. Example - If your true P99 latency is 100ms, a DDSketch configured with a 1% error guarantee will instantly tell you the P99 is between 99ms and 101ms. 
                     vs histogram which stores exact range resulting in lot of buckets and could be imprecise  
               - GPU monitoring : https://chatgpt.com/c/6a1722b5-f5a8-83e8-a177-ff948fcdb66f 
                 
