@@ -1596,7 +1596,8 @@ Time to understand scalability, latency aspects
                 option A - retain backlog. Kafka uses this approach 
                 option B - throttle producers 
               - Flow control
-                - socket buffer limits 
+                - rate limit ( at producer level  ) 
+                - socket buffer limits
                 - broker and topic quotas 
               - Network optimization
                 - epoll/kqueue
