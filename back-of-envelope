@@ -1650,6 +1650,8 @@ Time to understand scalability, latency aspects
             https://chatgpt.com/c/6a2ddd5f-a7f0-83e8-b04b-40d17a6f93a5 
               - Data model : timestamp, value, set of <key,value> labels 
               - line protocal which is used in Prometheus, OpenTSDB
+                - format : measurement,tag_key=tag_value field_key=field_value timestamp
+                  example : weather,location=us-midwest temperature=82 1465839830100400200
               - choice of DB : TimeSeries (burst read, high writes)
                   - OpenTSDB is a distributed time-series database, but since it is based on Hadoop and HBase, running a Hadoop/HBase cluster adds complexity. 
                   - Twitter uses MetricsDB [10], and Amazon offers Timestream as a time-series database [11].
