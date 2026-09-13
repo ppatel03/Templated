@@ -28,10 +28,11 @@ Framework -
             - Data freshness SLA if eventual consistency
             - CAN PUT Strong consistency for few APIs like profile update, offline alerting, billing info. ( For example,  in Cassandra, you can specify query level if quorum consistency is needed - SELECT * FROM users WHERE id = 123 USING CONSISTENCY QUORUM;)
       3.1.2. Latency 
-      3.1.3. Error rate ( optional )
-    3.2 - Resilent systems ( measured by MTTR, MTTD, Auto-remediation rate)
+      3.1.3. Durability - RPO ( helps to understand if persistence storage is needed)
+      3.1.4. Error rate ( optional )
+    3.2 - Resilent and Operational systems ( measured by RPO,  RTO/MTTR, MTTD, Auto-remediation rate)
       3.2.1. Fault tolerant (DR ready - mirroring, statlessness) 
-      3.2.2  Durability (No data loss - replication, Use pull) 
+      3.2.2  Durability (No data loss - replication, Use pull) measured by RPO
       3.2.3. Autoscaling, Auto-heal like in Kubernetes, Orion-like system + high bandwidth replication for stateful systems
     3.3. - Consistency 
        - Type and freshness SLA if eventual/temporal : covered during availability above 
