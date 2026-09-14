@@ -2554,6 +2554,7 @@ Time to understand scalability, latency aspects
                     - low frequency checkpointing 
                     - async i/o support for jobs
                     - related sub-tasks on same node
+                    - QoS ( requests and limits same) to avoid burst
                   
                   Scheduling Algo 
                     - Quota fariness + premption + Gang scheduling + MIP scheduler ( fragementation, system overhead, instance types supported, workload overhead, WNO) over just built in binpacking scheduler 
