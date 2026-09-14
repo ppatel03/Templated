@@ -2203,7 +2203,7 @@ Time to understand scalability, latency aspects
                 - Metadata becomes the bottleneck, not storage. Large-scale object stores rely heavily on metadata partitioning and routing.
                 - Suppose:
                     bucket:
-                      logs/ has 1B objects
+                      log_kubernetes has 1B objects
 
                     LIST query requires:
                       logs/2026/01/*
