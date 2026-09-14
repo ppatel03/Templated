@@ -2223,6 +2223,7 @@ Time to understand scalability, latency aspects
                     - compute the d3 from parity bits 
                     - store d3 in new node 
                     - update the metadata for node to fragment/data mapping
+                  - you can go for hybrid ( old tiers - parity, hot new ones - use replication)
               - Integrity using checksum 
               - Object versioning 
               - Multipart upload (breaks the file into muliple parts, server sends eTag for each part, after finish clients sends all etags in order for server to resemble and perform ordering )
