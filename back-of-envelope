@@ -2421,7 +2421,7 @@ Time to understand scalability, latency aspects
               - Handling failed payments with Retry + dead letter queue
               - Exactly once delivery using idempotency on payment token OR nonce (checkout id)
               - Security 
-                  - use HTTPS, Enforce encrpytion, DB replication across regions, Rate limiting to avoid DDOS, Card theft by tokenization, PCI compliance, Address verification + card verification value (CVV)
+                  - use HTTPS, Enforce encrpytion, Rate limiting to avoid DDOS, Card theft by tokenization (tokens instead of card info), PCI compliance ( set of rules - https, encryption, card data protection, access control), Address verification + card verification value (CVV)
                   - use HMAC signature (  Hash-based Message Authentication Code generated using shared secret key between two) for webhook
                   - Fraud detector using ML
                     - Features : 
