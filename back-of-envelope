@@ -2445,21 +2445,21 @@ Time to understand scalability, latency aspects
               - High level design 
                   Client -> LB -> Wallet Service -> DB 
               - Data Model 
-                - Wallet ( account_id, current balance, holds/reserved, available balance)
+                - Wallet ( account_id, current balance, holds/reserved, net available balance)
                 - Ledger ( Double entry ledger as above)
                     entry_id
                     tx_id
                     account_id
+                    type ( credit/debit)
                     amount
                     timestamp
-                    type ( credit/debit)
               - Reconcilliation ( same as above with internal ledger, external processing system and bank statement)
               - Multi-Region Design ( same as above with Active-Passive for ledger with single write leader and async replication to other regions)
               - Exactly Once Payment : Atleast once + Idempotency on transaction id
               - Fraud System : ML based same as above features 
               - Scale :  what if DB is sharded 
-                1. 2PC ( prepare phase where source and dest reply yes  + commit phase where actual transaction takes place with yes reply ) 
-                  - depends on DB support, XA standard to implement it for heterogeneous systems. 
+                1. 2PC ( prepare phase where source and dest reply yes with locks on rows  + commit phase where actual transaction takes place with yes reply amd release the locks ) 
+                  - depends on DB support, XA standard ( which splits 2PC into clear roles of application program, Transaction manager as Coordinator and Resource Manager as Participates and plus requires every DB to be compliant. Then it has xa_start, xa_prepare, xa_commit, xa_end) to implement it for heterogeneous systems. 
                   - Cons 
                     - The biggest problem with 2PC is that it’s not performant, as locks can be held for a very long time while waiting for a message from the other nodes. 
                     - Another issue with 2PC is that the coordinator can be a single point of failure
