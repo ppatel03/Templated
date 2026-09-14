@@ -1892,7 +1892,7 @@ Time to understand scalability, latency aspects
                     UPDATE day3
                   COMMIT
               - DB sharding (do we really need it - No based on requirements)
-                - If sharding is needed, then shard by hotel id so that all rows from different for that hotel id stays in same shard. 
+                - If sharding is needed, then shard by hotel id so that all rows from different reservations for that hotel id stays in same shard. 
                 - Distributed Transaction?
                   -  Booking should never span hotels to avoid distributed transaction 
                   - Design data model around:
@@ -1975,7 +1975,7 @@ Time to understand scalability, latency aspects
                         Orchestrator
                               ↓
                         Confirm Booking
-                       So, if Payment fails, then orchestrator detects via 5xx/4xx from payment service and emits event failed on kafka topic (only for change log purpose), Orchestrator service then calls inventory service to release inventorynd 
+                       So, if Payment fails, then orchestrator detects via 5xx/4xx from payment service and emits event failed on kafka topic (only for change log purpose), Orchestrator service then calls inventory service to release inventory 
                       Challenges : Coordinator being single point of failure  
                 - Saga Requires Idempotency
                     Every command must support: 1) Execute multiple times and 2) Same result
