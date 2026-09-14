@@ -5865,6 +5865,7 @@ Distributed systems today and Benchmarking on common systems
                   - Speculative Decoding
                   - Parallelism ( Tensor Parallelism + MOE Parallelism) for large models 
                   - Dedicated Hardware for Prefill vs Decode ( Memory Bandwidth Heavy )
+                  - LoRA adapters
                   - high throughput with batching : saves majority of cost ( example, 70% savings from 5ms for 1 req vs 20ms for 32 reqs) but make sure there is 5-10ms window for latency sensitive workloads and 50 ms for thoughput-optimized workloads
                       - Latency is in fact better with batching https://chatgpt.com/c/69b86f52-7544-832e-a812-06e6ca2956c8?src=history_search  because 
                         1. It avoids kernel launch overhead 
