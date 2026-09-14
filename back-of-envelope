@@ -2494,7 +2494,7 @@ Time to understand scalability, latency aspects
                             Credit B
                           COMMIT
                     - Eventually Consistent: Everything else ( Wallet update, Notification, Analytics, Fraud, Rewards) where SAGA could be leveraged here
-                  - Use SAGA with event sourcing. So on ledger update, event is published to Kakfa where SAGA Co-ordinator can assume 
+                  - Use SAGA with event sourcing. So on ledger update, event is published to Kakfa where SAGA Co-ordinator can perform the sequence of transactions  
                   - What if ledger is updated but event failed to publish to Kafka ? 
                     - Use Transaction Outbox pattern : Since ledger is immutable and append only, have ledger table update and outbox table in one atomic transaction. Outbox table is mutable which stores the status for "event_published?". Publisher can simply periodically query Outbox table and publish to Kafka
                                   +-------------+
