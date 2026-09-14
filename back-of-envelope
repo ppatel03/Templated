@@ -2363,8 +2363,8 @@ Time to understand scalability, latency aspects
                       entry_id
                       account_id
                       transaction_id
-                      debit
-                      credit
+                      type ( credit/debit)
+                      amount
                       timestamp
                   -  Account_id	    Debit	   Credit    transaction_id    timestamp
                       buyer_id	    $10                     123           X
