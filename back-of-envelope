@@ -5771,6 +5771,29 @@ Distributed systems today and Benchmarking on common systems
             
           Pinterest 
             - Problem : Pinterest Infra cost is major contributution towards margin and goal was to save 100M$ every year for 3 years especially with AI adoption. The challenges is most low hanging fruits of utilization based right sizing opportunities  have been diminishing YoY. Pinterest already had 50-70% utilization based on their bottleneck resource. So we need to look deeper.
+              - Top challenges :  https://excalidraw.com/#room=6ee4f5d6f525a19d546c,Duz5YdLv0qhwGv9pNSZo_Q 
+                - Utilization efficiency actionability with Scheduling efficiency  
+                    Why 1) so many factors :  gang scheduling, quota fairness, support pre-empting, GPU slicing based binpacking, with constraints on fragmentation
+                    overhead, system overhead, WNO, instance types supported, workload level overhead 2) handling drift 
+                    How : 1) MIP Solver 2) feedback loop to adjust weights using ML Serving XGBoost
+                -  Profiler tooling optimization : 
+                    Why : hosts having 1000+ process and 9+ different languages scaled upto 20% cpu and 20% mem
+                    How : less than 1% cpu, 1% mem ( based on 24xl) by resolving memory leaks, switching to eBPF profilers and GPU monitoring, stack unwinding in kernel, cgroup protection, streaming stack trace data during enrichment
+                - Multi-tenant Enforcement Tooling Solution
+                    Why: Multi-layer Solver, Attribution and Chargeback. For example ML users/MySQL users on MLP /MySQL Platform on top of our Kubernetes platform 
+                    How : Solve base layer of Pincompute solver for EC2 using Arithmetic Solver with instance profile ( specifies all overhead fron binpacking, daemonset by instance type) , then provide plugins at tenant layer to bring their own solver, chargeback using attribution annonation hiearachy in CRD.
+                - Workload utilization efficiency actionability with software opportunities 
+                  - Why : increase workload utilization always impacted latency 
+                  - How : 
+                    - deep dive profiling with perfspect showed backend bound on cache misses causing memory look ups and many branch mispredictions. Solutions were :  simd json for serde, avoid pointer heaving data structure, numa pinning for cpu 
+                    - trace based profiling to tune finagle (async io) threadpool, compression tuning ( vs network trade off), io_uring
+              - top trade off : 
+                - hard governance controls on capacity due to budget overruns vs risk on service scaling risk 
+                  - made sure actionable tools are available with high quality data for capacity estimation : service level and experiment load testing -> throughput based estimation, deeper profiling, budgeting system and emergency path 
+                  - GPU binpacking : GPU sharing with MIG support 
+                - investment in long term ISP plans with fixed instance families and size consolidation over flexible types
+                  - memory is way cheaper : m, better pcie bandwidth support : p, instance storage support :i 
+                  - 10% year 1 but overhead to migrate and MIP scheduling effort 
               - Build LLM observability infrastructure 
                 -  LLM cost tracking infra via proxy, over complex solutions like monkey patching, mitm proxy, ebpf 
                 -  LLM governance using enforcment policy
