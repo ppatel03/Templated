@@ -5787,6 +5787,12 @@ Distributed systems today and Benchmarking on common systems
                   - How : 
                     - deep dive profiling with perfspect showed backend bound on cache misses causing memory look ups and many branch mispredictions. Solutions were :  simd json for serde, avoid pointer heaving data structure, numa pinning for cpu 
                     - trace based profiling to tune finagle (async io) threadpool, compression tuning ( vs network trade off), io_uring
+                - Token entitlement enforcement 
+                  - Why : different sources - Claude, Codex, other LLMs, Cursor 
+                  - How : 
+                    - Otel for Claude and Codex pushing the metrics on every call, Webhook for Cursor sending the metrics 
+                    - Ai-sandbox env for Claude and Codex which can connect to Custom LLM gateway, Cursor onsubmit admin controls 
+                    - Optimization : cost per token reducing using model routing, semantic caching, batching ( bedrock), Cache alignment for prefix and token reduction using RAG tracing, Compress -> Cache -> Retreive   
               - top trade off : 
                 - Opensource tooling over Buy over Build : 
                     - Pros : Open source solution eliminates both Buy overhead, more flexible to modify and saves eng effort in building.
