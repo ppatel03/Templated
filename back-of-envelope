@@ -5788,12 +5788,29 @@ Distributed systems today and Benchmarking on common systems
                     - deep dive profiling with perfspect showed backend bound on cache misses causing memory look ups and many branch mispredictions. Solutions were :  simd json for serde, avoid pointer heaving data structure, numa pinning for cpu 
                     - trace based profiling to tune finagle (async io) threadpool, compression tuning ( vs network trade off), io_uring
               - top trade off : 
+                - Opensource tooling over Buy over Build : 
+                    - Pros : Open source solution eliminates both Buy overhead, more flexible to modify and saves eng effort in building.
+                    - Cons : slow development cycle, reliability and security challenge. 
+                        - Mitigation : This was solved with Intel Partnership on Pinterest's commitment to testing their newest generations
+                - Hardware efficiency tooling actionability was investment in long term ISP plans with fixed instance families and size consolidation over flexible types
+                  - Pros : 72% discount, compounding savings over years 
+                  - Cons : 3 years locked in instances with ISP - I, M and P, overhead in migration plus net in year 1 was only 15%, year 2 was way higher
+                        - Mitigation : 
+                          - Analysis where memory plans were 10x cheaper and 70% of pinterest services were memory bound and also always loaded stagnant cache - so we resorted to m family. For GPU, pcie was the bottleneck - so P and Instance storage support which has enhanced networking options with EFA : so I
+                          - Better scheduling with MIP scheduling : GPU binpacking possible GPU sharing with MIG support 
+                          - Actionable tooling on capacity estimation ( experiment level), througput based estimation, advanced profiling based on wall time, pmu counteres backed by trace based profiling
                 - hard governance controls on capacity due to budget overruns vs risk on service scaling risk 
-                  - made sure actionable tools are available with high quality data for capacity estimation : service level and experiment load testing -> throughput based estimation, deeper profiling, budgeting system and emergency path 
-                  - GPU binpacking : GPU sharing with MIG support 
-                - investment in long term ISP plans with fixed instance families and size consolidation over flexible types
-                  - memory is way cheaper : m, better pcie bandwidth support : p, instance storage support :i 
-                  - 10% year 1 but overhead to migrate and MIP scheduling effort 
+                  - Pros : avoid 10M$+ budget overruns
+                  - Cons : service scaling risks, user churns, multi-layer platforms 
+                    - Mitigation : 
+                      - emergency path
+                      - Actionable tooling on capacity estimation ( experiment level), througput based estimation, advanced profiling based on wall time, pmu counteres backed by trace based profiling
+                      - multi-layer entitlements with Arithmetic solver with node profile as base layer, bring your own solver, chargeback using attribution info in pod crd
+                - Capacity Abstraction with shared ODCR over dedicated odcrs per project/service
+                  - Pros : cost optimization since 60% of cases were someones peak was someones trough
+                  - Cons : getting the right number of ODCRs at any hours, days, etc.
+                    - Mitigation : entitlement solution with budget enforcement with min and max limits where to end project, we make sure their odcrs are always above min. Anything between min and max can come from shared.
+                
               - Build LLM observability infrastructure 
                 -  LLM cost tracking infra via proxy, over complex solutions like monkey patching, mitm proxy, ebpf 
                 -  LLM governance using enforcment policy
