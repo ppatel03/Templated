@@ -5774,7 +5774,7 @@ Distributed systems today and Benchmarking on common systems
               - Build LLM observability infrastructure 
                 -  LLM cost tracking infra via proxy, over complex solutions like monkey patching, mitm proxy, ebpf 
                 -  LLM governance using enforcment policy
-                -  LLM cost efficiency with model routing,  RAG tracing 
+                -  LLM cost efficiency with model routing,  batching,  semantic caching ( vector search), RAG tracing, deduplication ( across documents, prefix alignment (headroom repo)  https://chatgpt.com/c/6ab536ca-f544-83e8-8b23-cb7f899d347e 
               - Capacity Enforcement Tooling 
                 - Enforcement solution which avoids budgets overrun 
                   - Base platform : Kubernetes and Spark platform in 2025,2026
