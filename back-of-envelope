@@ -5785,7 +5785,7 @@ Distributed systems today and Benchmarking on common systems
                 - Workload utilization efficiency actionability with software opportunities 
                   - Why : increase workload utilization always impacted latency 
                   - How : 
-                    - deep dive profiling with perfspect showed backend bound on cache misses causing memory look ups and many branch mispredictions. Solutions were :  simd json for serde, avoid pointer heaving data structure, numa pinning for cpu 
+                    - deep dive profiling with perfspect showed backend bounded stalls on cache misses causing memory look ups and many branch mispredictions. Solutions were :  simd json for serde, avoid pointer heaving data structure, numa pinning for cpu 
                     - trace based profiling to tune finagle (async io) threadpool, compression tuning ( vs network trade off), io_uring
                 - Token entitlement enforcement 
                   - Why : different sources - Claude, Codex, other LLMs, Cursor 
