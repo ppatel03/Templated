@@ -5908,7 +5908,7 @@ Distributed systems today and Benchmarking on common systems
                   - vector optimization using sparse matrix multiplication
                     - non vector db use case since vector DB like Weavite support HNSW which includes skip list and part of implementation does support sparse matrix multiplication
                
-                - ML Serving Infra and Efficiency ( 2026+)
+                - LLM Serving Infra and Efficiency ( 2026+)
                   https://www.youtube.com/watch?v=s-eVxzHMgI0
                   Split into Prefill ( First token generated which is compute heavy) and Decode Phase ( Subsequent tokens which is Memory Bandwidth heavy) 
                   - knowledge distillation ( teacher-student approach) like in Roblox https://blog.bytebytego.com/p/how-roblox-uses-ai-to-translate-16 
