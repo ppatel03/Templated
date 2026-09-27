@@ -5902,10 +5902,6 @@ Distributed systems today and Benchmarking on common systems
                               Benefits:
                                 fewer instructions
                                 lower memory latency
-                 - Prompt Optimization ( 2026+ )
-                  - Token reduction with Embeddings + RAG 
-                  - Caching eps. for embeddings  
-                  - Model routing
 
                 - ML Training ( 2026+)
                   - dimensionality reduction in input features
