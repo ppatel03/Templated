@@ -1683,6 +1683,7 @@ Time to understand scalability, latency aspects
                     Example - (ts, ad_id, user_id, country, device, bid_price, ...)
                     Optimized for: arbitrary SQL, JOINs, large scans, in built downsampling with explicit MV, analytics over rich events.
                     - use case : multi dimensionsional query and support high cardinalities too. 
+                  - High recommend to read clickhouse self transformation and aggregation using insert-triggered materialized view https://chatgpt.com/s/p_6abadf6664408191a466b98f0f90ba8f 
                 - Performance comparison https://claude.ai/chat/04194c08-d441-47db-a75d-dff602522243 
                   - Reads :
                     1) Last-N-minutes single series (e.g. cpu{host=A}[5m])
