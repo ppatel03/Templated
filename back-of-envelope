@@ -5790,7 +5790,8 @@ Distributed systems today and Benchmarking on common systems
                     - filtering on non indexed columns is still faster by 1) Bitmap encoding which uses SIMD 2) dictionary encoding to avoid string comparison making SIMD best choice
                     - vs timeseries DB which stores both metric name {label combinations} = value and also inverted index of each label -> timeseries increasing storage cost
                 - GraphQL over REST - https://chatgpt.com/c/6abaf128-6728-83e8-b9f8-d75257078b5d 
-                  - Rapid UI iteration, 
+                  - Rapid UI iteration - less endpoints to develop and native supprot with apollo/relay
+                  - less number of request
                   - Nested UI components for drill down support , 
                   - reduce over fetching since utilization data is huge and also different consumers of UI surfaces requesting slices of data
                   - Problems with graphql : N + 1 query problem (needs bulk loading) , expensive nested queries (set query depth, paginate collections), fine grained field level RBAC ( needs authorization component or L7 based envoy) 
