@@ -5772,17 +5772,35 @@ Distributed systems today and Benchmarking on common systems
             
           Pinterest 
             - Problem : Pinterest Infra cost is major contributution towards margin and goal was to save 100M$ every year for 3 years especially with AI adoption. The challenges is most low hanging fruits of utilization based right sizing opportunities  have been diminishing YoY. Pinterest already had 50-70% utilization based on their bottleneck resource. So we need to look deeper.
-              - Top challenges :  https://excalidraw.com/#room=6ee4f5d6f525a19d546c,Duz5YdLv0qhwGv9pNSZo_Q 
-                - Utilization efficiency actionability with Scheduling efficiency  
-                    Why 1) so many factors :  gang scheduling, quota fairness, support pre-empting, GPU slicing based binpacking, with constraints on fragmentation
-                    overhead, system overhead, WNO, instance types supported, workload level overhead 2) handling drift 
-                    How : 1) MIP Solver 2) feedback loop to adjust weights using ML Serving XGBoost
-                -  Profiler tooling optimization : 
-                    Why : hosts having 1000+ process and 9+ different languages scaled upto 20% cpu and 20% mem
-                    How : less than 1% cpu, 1% mem ( based on 24xl) by resolving memory leaks, switching to eBPF profilers and GPU monitoring, stack unwinding in kernel, cgroup protection, streaming stack trace data during enrichment
-                - Multi-tenant Enforcement Tooling Solution
-                    Why: Multi-layer Solver, Attribution and Chargeback. For example ML users/MySQL users on MLP /MySQL Platform on top of our Kubernetes platform 
-                    How : Solve base layer of Pincompute solver for EC2 using Arithmetic Solver with instance profile ( specifies all overhead fron binpacking, daemonset by instance type) , then provide plugins at tenant layer to bring their own solver, chargeback using attribution annonation hiearachy in CRD.
+                - Architectural decisions
+                  - Silent mode agent as host level daemon by default over agent deployed as sidecar 
+                    -  need for profiling host level daemonset, 60% of uses cases were short tern profiling, release cycles independent of workload owners
+
+                  - Pub sub system for multi-tenant platforms 
+                      - async process especially capacity readiness and provisioning, multiple subscribers platforms and end user entitlement/request
+                  - Self serve onboarding for multi-tenant platforms
+                      - key config metrics supported to dollar value conversion, bring your own solver ( metrics to resources needed - example 100GB, 1 GBps MySQL DB is 32 vcpu, 128 G mem, dedicated node on kubernetes ) 
+                  - Arithmetric Solver over MIP solver (scheduler like implementation in MIP to get # of hosts needed) 
+                    - backtesting revealed fixed harmonic sizes had lower 60% fragmentation, so easier Arithmetric computation if workloads are forced to fixed size ratios 
+                    - node level overhead will be absorbed as part of nodeprofilegroup selection
+                  - Why Clickhouse as efficiency insights store over Timeseries DB
+                    - open source support : profiler 
+                    - support high cardinalities upto 10k with comparatively less storage
+                    - built-in insert triggered (CDC like) self transformation / aggregation using " materialized view " to put into target aggregated table ( say hourly, daily, monthly) 
+                    - filtering on non indexed columns is still faster by 1) Bitmap encoding which uses SIMD 2) dictionary encoding to avoid string comparison making SIMD best choice
+                    - vs timeseries DB which stores both metric name {label combinations} = value and also inverted index of each label -> timeseries increasing storage cost
+
+                - Top challenges :  https://excalidraw.com/#room=6ee4f5d6f525a19d546c,Duz5YdLv0qhwGv9pNSZo_Q 
+                  - Utilization efficiency actionability with Scheduling efficiency  
+                      Why 1) so many factors :  gang scheduling, quota fairness, support pre-empting, GPU slicing based binpacking, with constraints on fragmentation
+                      overhead, system overhead, WNO, instance types supported, workload level overhead 2) handling drift 
+                      How : 1) MIP Solver 2) feedback loop to adjust weights using ML Serving XGBoost
+                  -  Profiler tooling optimization : 
+                      Why : hosts having 1000+ process and 9+ different languages scaled upto 20% cpu and 20% mem
+                      How : less than 1% cpu, 1% mem ( based on 24xl) by resolving memory leaks, switching to eBPF profilers and GPU monitoring, stack unwinding in kernel, cgroup protection, streaming stack trace data during enrichment
+                  - Multi-tenant Enforcement Tooling Solution
+                      Why: Multi-layer Solver, Attribution and Chargeback. For example ML users/MySQL users on MLP /MySQL Platform on top of our Kubernetes platform 
+                      How : Solve base layer of Pincompute solver for EC2 using Arithmetic Solver with instance profile ( specifies all overhead fron binpacking, daemonset by instance type) , then provide plugins at tenant layer to bring their own solver, chargeback using attribution annonation hiearachy in CRD.
                 - Workload utilization efficiency actionability with software opportunities 
                   - Why : increase workload utilization always impacted latency 
                   - How : 
@@ -5793,8 +5811,9 @@ Distributed systems today and Benchmarking on common systems
                   - How : 
                     - Otel for Claude and Codex pushing the metrics on every call, Webhook for Cursor sending the metrics 
                     - Ai-sandbox env for Claude and Codex which can connect to Custom LLM gateway, Cursor onsubmit admin controls 
-                    - Optimization : cost per token reducing using model routing, semantic caching, batching ( bedrock), Cache alignment for prefix and token reduction using RAG tracing, Compress -> Cache -> Retreive   
-              - top trade off : 
+                    - Optimization : cost per token reducing using model routing, semantic caching, batching ( bedrock), Cache alignment for prefix and token reduction using RAG tracing, Compress -> Cache -> Retreive
+
+              - Top trade off : 
                 - Opensource tooling over Buy over Build : 
                     - Pros : Open source solution eliminates both Buy overhead, more flexible to modify and saves eng effort in building.
                     - Cons : slow development cycle, reliability and security challenge. 
