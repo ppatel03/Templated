@@ -5789,6 +5789,11 @@ Distributed systems today and Benchmarking on common systems
                     - built-in insert triggered (CDC like) self transformation / aggregation using " materialized view " to put into target aggregated table ( say hourly, daily, monthly) 
                     - filtering on non indexed columns is still faster by 1) Bitmap encoding which uses SIMD 2) dictionary encoding to avoid string comparison making SIMD best choice
                     - vs timeseries DB which stores both metric name {label combinations} = value and also inverted index of each label -> timeseries increasing storage cost
+                - GraphQL over REST - https://chatgpt.com/c/6abaf128-6728-83e8-b9f8-d75257078b5d 
+                  - Rapid UI iteration, 
+                  - Nested UI components for drill down support , 
+                  - reduce over fetching since utilization data is huge and also different consumers of UI surfaces requesting slices of data
+                  - Problems with graphql : N + 1 query problem (needs bulk loading) , expensive nested queries (set query depth, paginate collections), fine grained field level RBAC ( needs authorization component or L7 based envoy) 
 
                 - Top challenges :  https://excalidraw.com/#room=6ee4f5d6f525a19d546c,Duz5YdLv0qhwGv9pNSZo_Q 
                   - Utilization efficiency actionability with Scheduling efficiency  
