@@ -689,8 +689,8 @@ Time to understand scalability, latency aspects
                 - Preferences Table
                     user_id
                     app_id ( app / web domain)
-                    notification_type
-                    channel_enabled (push/email/sms)
+                    notification_type (push/email/sms)
+                    channel_enabled 
                 - Notifications Table (optional persistence to track the status)
                     notification_id
                     user_id
