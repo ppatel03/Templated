@@ -296,7 +296,7 @@ Time to understand scalability, latency aspects
           - sharding support
             - All NoSQL DB like Cassandra, MongoDB, Dynamo DB supports sharding with managed service. This means sharding strategy of hash based (consistent hashing) is already supported and also in-built routing logic for right shard. 
 
-            - With AWS offers you can shard both SQL DB like AWS RDS BUT Sharding is manual and not a managed service http://tinyurl.com/2yapkhgn 
+            - With AWS offers you can shard both SQL DB like AWS RDS and now automated via AWS Limitless Aurora PostgresqlDB managed service http://tinyurl.com/2yapkhgn 
 
             - Without AWS offers, SQL DB like MySQL, Postgresql are hard to shard - https://www.squash.io/tutorial-on-database-sharding-in-postgresql/
             
