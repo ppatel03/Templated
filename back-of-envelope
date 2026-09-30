@@ -608,7 +608,7 @@ Time to understand scalability, latency aspects
                 -       vs  depend on unique id generator 
                 - collision vs collision free 
                 - cannot figure next url vs easy to figure out next url if unique id increments by 1 for new entry 
-            - DB : read heavy, simple MySQL could work but if sharding is needed, prefer dynamodb which is based on B tree
+            - DB : read heavy, simple MySQL could work but if sharding is needed, prefer Aurora limitless or even dynamodb which is based on B tree
                 - consistency : strong since user expects to have tinyurl working immediately.  DynamoDB quorum consistency
             - Hot url : cache ( since urls do not update) with LRU or salting
             - Abuse Prevention : 
