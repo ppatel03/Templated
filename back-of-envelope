@@ -1117,7 +1117,7 @@ Time to understand scalability, latency aspects
                       segment2.ts
                       segment3.ts
                     - Compression : Key trade-off — H.264 vs AV1: AV1 gives ~30% better compression at equivalent quality but requires ~10× more CPU to encode/transcode. YouTube applies AV1 only to 1080p+ where bandwidth savings justify the compute cost. 
-                    - CDN cache efficiency: YouTube uses LRU eviction at edge nodes. The top 10% of videos (by views) account for ~90% of bandwidth. For viral new uploads, YouTube pre-warms nearby PoPs when a video hits a view velocity threshold (~10,000 views in 10 minutes). Long-tail videos (99%+ of catalog) are served from regional origin clusters rather than edges, accepting higher latency for lower storage cost.
+                    - CDN cache efficiency: YouTube uses LRU eviction at edge nodes. The top 10% of videos (by views) account for ~90% of bandwidth. For viral new uploads, YouTube pre-warms nearby PoPs when a video hits a view velocity threshold (~10,000 views in 10 minutes). Long-tail videos (99%+ of catalog) are served from regional origin clusters rather than edges, accepting higher latency for lower storage and CDN cost.
                 - Safety : Presigned URL for authorized users to upload/modify, also it saves bandwidth by avoiding going through your LB and api server
                 - Video Protection - AES encryption, watermarking 
                 - Video likes counting - Aggregation pipeline + CRDT for multi-region, hyperloglog for approx
