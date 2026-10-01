@@ -1018,7 +1018,7 @@ Time to understand scalability, latency aspects
                 - Memory explosion 10 TB ( compressed trie (entire word), FST (targeted suffixes) or TST (super compact but search is slow))
                 - Pointer overhead ( cache misses, non vector ins to vector ones simd friendly representation like LOUDS)
                 - Hot prefixes ( example a has millions of descendants)
-              - Scale solutions 
+              - Scale solutions https://chatgpt.com/s/p_6abea91bfb3c8191822c1b8f8d00a9f5 
                 - Compressed Trie 
                   (c -> a -> m -> e -> r -> a to "camera")
                 - TST ( Ternary search tree) - saves memory but expensive to search 
@@ -1028,8 +1028,8 @@ Time to understand scalability, latency aspects
                     jogging
                     walking
                   So Instead of duplicate suffixes: creates i -> n -> g shared across words
-                  Also Transducer, edges can store and emit outputs 
-                - DAWG ( Directed Acyclic word graph)
+                  Also called Transducer because edges can store weights/score and emit outputs 
+                - DAWG ( Directed Acyclic word graph which converts trie to graph) similar to FST
                 - Hot key/prefix problem 
                   - further divide a into aa-ac, ad-af etc. 
                 - LOUDS (Level-Order Unary Degree Sequence)
@@ -1038,7 +1038,11 @@ Time to understand scalability, latency aspects
               - Further Performance : 
                 - Browser cache (header cache-control), 
                 - CDN caching
-                - mmap FST trie
+                - mmap FST trie https://share.google/aimode/Vt1KzvxXevuhNjM9j 
+                  - you directly reference the kernel page block which has direct to virtual memory ( memory + disk)
+                  - this kernel page block can be shared between processes
+                  - basically avoids double copy your file from kernel into process/user application's memory. 
+                  - mmap is lazy loaded, so kernel page block is brought in memory only when its read. So use for large files which can be brought in memory by warming up reads and shared between processes - Trie is a good example. If several files uses mmap and have on-demand reads, it will cause overhead with page faults for bring files back into memory
               - Smart sharding based on historical queries for equal load partition
               - Security
                 - Abuse Prevention : Attacker can keep search for unwanted words. So Filter unwanted words to avoid getting indexed into trie
