@@ -877,7 +877,7 @@ Time to understand scalability, latency aspects
                   - use tiered strategy
                     - 1:1 - shared partition, groups - dedicated parition, hot groups - dedicated topic 
                 - Why not pub sub model by conversation id ? 
-                  - it will ends up making chat service stateful : if chat service restart, there will be tons of re-subscription events. Adding / removing chat service have to done carefully
+                  - it will ends up making chat service add additional stateful dependency on subscription : if chat service restart, there will be tons of re-subscription events. Adding / removing chat service have to done carefully
                   - subscription storm : if celebrity comes back online after long time,  it will trigger tons of subscription events
               - Multi-device sync 
                 - If user already seen message on device A, then update user last_read_message_id in User's Inbox
