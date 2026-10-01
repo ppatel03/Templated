@@ -1345,6 +1345,9 @@ Time to understand scalability, latency aspects
                       H3 ( faster look up to the cell)
                         +
                       QuadTree inside hot cells ( helps in further splitting the cell)
+
+                      OR hieararial cells like uber
+                      OR S2 face + H3 (cells for each face) + Quadtree for host cell 
               - High level design 
                   Browser/Client -> LB -> API Service -> Geo hash DB (redis)
                                                               -> DB (business info)
