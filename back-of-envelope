@@ -1122,7 +1122,7 @@ Time to understand scalability, latency aspects
                 - Video Protection - AES encryption, watermarking 
                 - Video likes counting - Aggregation pipeline + CRDT for multi-region, hyperloglog for approx
                 - Search system - index metadata (title, description, tag) in elasticsearch
-                - Recommendation -  generate candidates using embedding + features and then apply ranking model for serving top X feeds
+                - Recommendation -  generate candidates using embedding ( two-tower model) + features and then apply ranking model for serving top X feeds
                 - Hot video problem - CDN, promise cache with redis 
                 - Others - Live streaming, scaling the database
             12. Design Google Drive
