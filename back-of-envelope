@@ -1263,12 +1263,13 @@ Time to understand scalability, latency aspects
                         - Cons (not desirable for systems which needs accuracy)
                             - popular cities will have many business under same geohash
                             - boundary issues (closer business in different geohash. So go with shared prefix with an exception that equator divison has no shared prefix.)
+                            - if you expand to its boundary of 8 neighbour squares, then its diagonal is farther away ( which is H3 is preferred)
                       2. use Quadtree (keep dividing into 4 quadrants till min number of business in each grid) - Yext
                         - It is in-memory structure, so performing the calculations
                         - How is user lat and long is used to get quadtree leaf to get say 100 nearby businesses
                           - Example , say for lat = 37.9, long = -122.8
                             -                  [Root: Entire World]
-                                                  Bounds: (-90 to 90, -180 to 180)
+                                                  Bounds: (-90 south to 90 north, -180 west to 180 east)
                                                   Mid: (0°, 0°)
                                                   User: (37.42, -122.08)
                                                   Decision: 37.42 > 0 (N), -122.08 < 0 (W) → NW
@@ -1316,7 +1317,7 @@ Time to understand scalability, latency aspects
                               - c = 100 ( add/sub/comparison takes 5-10 cycles + avl tree balancing ~40 + L1/L2 cache miss ~40 + branch misprediction ~15 )
                               - so 100 * 2*10^6 * log base 2 (2*10^6) ~ 6 billion cycle ~ 6 s
                           - Large look up time to go recursive pointer especially for dense cities like Manhattan ( depth of 15+)
-                          - Expensive since it can cause tree splitting when more businesses are added
+                          - Online updates are Expensive and can interrupt live search since it can cause tree splitting when more businesses are added
                       3. Google S2 - Google Maps, Tinder
                        -  How is user lat and long is used to store and search in S2 ?
                           https://chatgpt.com/c/69a5ff3f-c94c-832d-be17-59255cc73e32 
