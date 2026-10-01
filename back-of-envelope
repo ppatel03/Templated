@@ -941,6 +941,12 @@ Time to understand scalability, latency aspects
               
           10. Design A Search Autocomplete System
               https://chatgpt.com/g/g-p-698235e6d2ac8191b248a12be431269a-system/c/6a141532-5fc8-83e8-84e7-9b0567655215 
+              - Assumption / questions to help define solution : 
+                - read QPS
+                - index/write QPS
+                - max length of prefix
+                - max length of word
+                - total number of words
               - High level design (trie)
                   - option 1 : indexing on mysql 
                     - for example, get suggestions for "app"
@@ -985,21 +991,20 @@ Time to understand scalability, latency aspects
                                                                                                       │
                                                                                                       ├─ Compare "apply"
                                                                                                       └─ Compare "apt" (STOP)
-                      - Complexity : O(l*log n + k*m + disk_io_overhead)
+                      - Complexity : O(l*log n + k*l + disk_io_overhead + klogk*l)
                           where:
                             l = max length of word in the tree ( each node need string comparison)
                             n = total number of words
                             k = number of words matching the prefix
-                            String comparison per entry: O(m) where m = average word length matching prefix
                   - Trie Data structure with frequency stored at every node with EOW = true 
-                      Complexity :   O(p + 26^(l-p) + klogk) : O(p + 26 if l is constant + klogk) : O(p+klogk after storing top words) : O(p)
+                      Complexity :   O(p + 26^(l-p) + klogk*l) : O(p + 26 if l is constant + klogk) : O(p+klogk after storing top words) : O(p)
                           where:
                             p = length of prefix (e.g., "app" = 3)
                             l = max level  ( remaining ) 
                             k = number of words matching the prefix
                           
 
-                  - But to fetch top 5 suggestions by frequency, complexity O(m)  + O(k) + O(sort by frequency)
+                  - But to fetch top 5 suggestions by frequency, complexity O(l)  + O(k) + O(sort by frequency)
                     - if we limit prefix length to search say p=10 and cache top 5 search at every node, then complexity will be constant
                   -  Trie cache will be in memory in form of trie structure
                     - overhead will look high for worst case because 26^10 byte =  (2 *10)^ 10 byte = ~ 1024 * 10G = 10 TB
@@ -1010,13 +1015,13 @@ Time to understand scalability, latency aspects
                                                                     
                   Analytics Logs -> Data parser -> Trie Builder (workers) -> update periodically to Trie DB
               - Scale challenges 
-                - Memory explosion 10 TB 
-                - Pointer overhead ( cache misses, non vector ins simd friendly)
+                - Memory explosion 10 TB ( compressed trie (entire word), FST (targeted suffixes) or TST (super compact but search is slow))
+                - Pointer overhead ( cache misses, non vector ins to vector ones simd friendly representation like LOUDS)
                 - Hot prefixes ( example a has millions of descendants)
               - Scale solutions 
                 - Compressed Trie 
                   (c -> a -> m -> e -> r -> a to "camera")
-                - TST ( Ternary search tree)
+                - TST ( Ternary search tree) - saves memory but expensive to search 
                 - FST used in lucene, solr, elasticsearch (Finite State Transducer)
                   - Trie has duplicate suffix structures.
                     running
@@ -1029,6 +1034,7 @@ Time to understand scalability, latency aspects
                   - further divide a into aa-ac, ad-af etc. 
                 - LOUDS (Level-Order Unary Degree Sequence)
                   - bit encoding of tries which is used in search engine + NLP 
+                  - operations are simd friendly
               - Further Performance : 
                 - Browser cache (header cache-control), 
                 - CDN caching
@@ -1039,7 +1045,7 @@ Time to understand scalability, latency aspects
                 - Privacy : should not leak private searches ( example SSN)
               - Others - multi-criteria ranking, online update Vs offline batch update
               - online update Vs offline batch update
-                - Lambda style ( TST trie from offline updates + online stream stored in redis cache --> merge --> rank)
+                - Lambda style ( TST/FST trie from offline updates + online stream stored in redis cache --> merge --> rank)
                   - Design
                     - Retrieval  
                           Keystroke
