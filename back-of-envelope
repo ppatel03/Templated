@@ -883,7 +883,7 @@ Time to understand scalability, latency aspects
                 - No need to store per message 
                 - Store per conversation in User's Inbox using last_read_message_id and last_delivered_message_id 
               - Chat service Scaling 
-                - use epoll
+                - use epoll. io_uring
               - Multi-region
                 - Every region can independently:
                       accept writes
