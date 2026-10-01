@@ -1206,12 +1206,13 @@ Time to understand scalability, latency aspects
                   tags
                   mime_type
               - Multi-region ( US, EU, APAC)
+                  Active - Active with async replication and conflict resolution using CRDT
                   Each region: API, Metadata, Cache 
                   Storage replicated respecting GDPR laws ( location based info)
               - Hot shared files : CDN, cache 
               - Small file problem 1 KB : then Metadata may exceed file size. Solution : Bundle tiny files internally or use optimized storage tiers.
               https://claude.ai/chat/519b7815-2049-42f8-9c0b-b8a4a408fc9a
-                - Quota enforcement and the TOCTOU race
+              - Quota enforcement and the TOCTOU race
                   What's quota enforcement? Every Google Drive user has a storage limit (e.g. 15 GB free). When you upload a file, the system must check you have space and deduct from your quota.
                   The naive approach and its race condition:
                     1. Read current quota usage   → 14.5 GB used
