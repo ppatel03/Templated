@@ -893,7 +893,7 @@ Time to understand scalability, latency aspects
                   - So when Alice in US sends message to Bob in Europe
                     - Alice gets ack about message being sent when message is persisted to DB in US 
                     - Push worker in Europe subscribed to replica partition in Europe sends message to Bob asynchronously
-                - Kafka : regional leader for partitions with async replication across region 
+                - Kafka : one leader partition per conversation id to avoid multi-leader conflicts. So regional leader for partitions with async replication across region  
               - Exactly-once semantics
                 - Atleast once during publish
                 - Idempotency on consumer using message_id+conversation_id ( bloom filter or redis)
