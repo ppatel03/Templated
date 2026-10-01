@@ -1495,7 +1495,7 @@ Time to understand scalability, latency aspects
                           one-shot subscriptions ( tcp connection closes on every event sent back to client so it can re-register)
                   - websocket servers stores the all list of channel ids it subscribed to 
                   - using hashfunction and ring from zookeeper, it will know which redis pub sub server to talk too
-                  - any change in ring structure will cause websocket servers resubscribing for all of its channel ids. 
+                  - any change in ring structure will cause websocket servers resubscribing for all of its channel ids. But websocket server can easily find out using reverse mapping of server -> channel ids ( which could be just user ids or derived from user ids)
                       - basically it computes the server using the hashfunction. 
                       - If the computed node is different, then it resubsribe
 
