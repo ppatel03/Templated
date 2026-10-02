@@ -2469,6 +2469,7 @@ Time to understand scalability, latency aspects
                       Active-Active APIs ( high available payment apis across region)
                         +
                       Single-writer Ledger (or Paritioned ownership if single ledger becomes huge ) + Asynchronous replication ( writes processed only by one region and replicated across region)
+                        - if first request goes to us-east-1 and say user refreshes or retries , then next request goes to us-east-2 if our user <-> region locality logic is broken and payment is sensitive
 
             23. Digital Wallet
             https://chatgpt.com/c/6a387db1-b6e0-83e8-b082-522b0d1f6dca 
