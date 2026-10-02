@@ -2235,7 +2235,12 @@ Time to understand scalability, latency aspects
                 - Potentials : 
                   - Metadata sharding 
                     - shard by bucket name, object name since most queries are based on that
-                    - but what about query to list all objects -> use separate denormalized table to store bucket name -> list of object ids
+                      - pros : data is well distributed across shards
+                      - cons : query to list all objects say path based - logs/2026/01/* under logs/ bucket, then query has to executed against all shards
+                        - solution : Dynamic partition splitting using prefix based (logs/2026/01/* -> shard 1 , logs/2026/02/* -> shard 2 )
+                        - But what about query to list all objects ->
+                          option 1: use separate denormalized table to store bucket name -> list of object ids ( additional storage)
+                          option 2: using prefix based search as above 
                   - Hot shard problem 
                     - Salting or Dynamic partition splitting using path based (logs/2026/01/* -> shard 1 , logs/2026/02/* -> shard 2 ) or salting
               - Durability 
